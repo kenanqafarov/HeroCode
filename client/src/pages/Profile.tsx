@@ -10,6 +10,7 @@ import {
   MessageSquare, Send, Minimize2, Maximize2, GripVertical
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -111,27 +112,27 @@ function adjustColor(hex: string, amount: number): string {
 // ─── Tag Config ───────────────────────────────────────────────────────────────
 
 const TAG_DARK: Record<TagType, { bg: string; text: string; border: string }> = {
-  LESSON:        { bg: 'rgba(0,255,136,0.08)',  text: '#00ff88',  border: 'rgba(0,255,136,0.25)' },
-  'SELF GUIDED': { bg: 'rgba(168,85,247,0.08)', text: '#a855f7',  border: 'rgba(168,85,247,0.25)' },
-  LAB:           { bg: 'rgba(251,191,36,0.08)', text: '#fbbf24',  border: 'rgba(251,191,36,0.25)' },
-  HOMEWORK:      { bg: 'rgba(239,68,68,0.08)',  text: '#f87171',  border: 'rgba(239,68,68,0.25)' },
-  EXTRA:         { bg: 'rgba(99,102,241,0.08)', text: '#818cf8',  border: 'rgba(99,102,241,0.25)' },
+  LESSON: { bg: 'rgba(0,255,136,0.08)', text: '#00ff88', border: 'rgba(0,255,136,0.25)' },
+  'SELF GUIDED': { bg: 'rgba(168,85,247,0.08)', text: '#a855f7', border: 'rgba(168,85,247,0.25)' },
+  LAB: { bg: 'rgba(251,191,36,0.08)', text: '#fbbf24', border: 'rgba(251,191,36,0.25)' },
+  HOMEWORK: { bg: 'rgba(239,68,68,0.08)', text: '#f87171', border: 'rgba(239,68,68,0.25)' },
+  EXTRA: { bg: 'rgba(99,102,241,0.08)', text: '#818cf8', border: 'rgba(99,102,241,0.25)' },
 };
 
 const TAG_LIGHT: Record<TagType, { bg: string; text: string; border: string; dot: string }> = {
-  LESSON:        { bg: '#e6faf3', text: '#0d9b6b', border: '#a7e8ce', dot: '#0d9b6b' },
+  LESSON: { bg: '#e6faf3', text: '#0d9b6b', border: '#a7e8ce', dot: '#0d9b6b' },
   'SELF GUIDED': { bg: '#eef2ff', text: '#4f46e5', border: '#c7d2fe', dot: '#4f46e5' },
-  LAB:           { bg: '#fefce8', text: '#92400e', border: '#fde68a', dot: '#d97706' },
-  HOMEWORK:      { bg: '#fff1f2', text: '#be123c', border: '#fecdd3', dot: '#e11d48' },
-  EXTRA:         { bg: '#f5f3ff', text: '#6d28d9', border: '#ddd6fe', dot: '#7c3aed' },
+  LAB: { bg: '#fefce8', text: '#92400e', border: '#fde68a', dot: '#d97706' },
+  HOMEWORK: { bg: '#fff1f2', text: '#be123c', border: '#fecdd3', dot: '#e11d48' },
+  EXTRA: { bg: '#f5f3ff', text: '#6d28d9', border: '#ddd6fe', dot: '#7c3aed' },
 };
 
 const TAG_ICONS: Record<TagType, React.ReactNode> = {
-  LESSON:        <BookOpen size={9} />,
+  LESSON: <BookOpen size={9} />,
   'SELF GUIDED': <Star size={9} />,
-  LAB:           <FlaskConical size={9} />,
-  HOMEWORK:      <FileText size={9} />,
-  EXTRA:         <Sparkles size={9} />,
+  LAB: <FlaskConical size={9} />,
+  HOMEWORK: <FileText size={9} />,
+  EXTRA: <Sparkles size={9} />,
 };
 
 // ─── Initial Module Data ──────────────────────────────────────────────────────
@@ -220,16 +221,16 @@ const INITIAL_MODULE_DATA: DayColumn[] = [
 ];
 
 const LESSON_SECTIONS = [
-  { id: 'learn',       title: 'What You Will Learn' },
+  { id: 'learn', title: 'What You Will Learn' },
   { id: 'three-layer', title: 'The Three-Layer Architecture' },
-  { id: 'problem',     title: 'The Problem Without DI' },
+  { id: 'problem', title: 'The Problem Without DI' },
   { id: 'constructor', title: 'Constructor Injection' },
-  { id: 'ioc',         title: 'How the IoC Container Works' },
-  { id: 'layers',      title: 'Putting the Layers Together' },
-  { id: 'field',       title: 'Why Not Field Injection?' },
-  { id: 'takeaways',   title: 'Key Takeaways' },
-  { id: 'mistakes',    title: 'Common Mistakes' },
-  { id: 'reading',     title: 'Further Reading' },
+  { id: 'ioc', title: 'How the IoC Container Works' },
+  { id: 'layers', title: 'Putting the Layers Together' },
+  { id: 'field', title: 'Why Not Field Injection?' },
+  { id: 'takeaways', title: 'Key Takeaways' },
+  { id: 'mistakes', title: 'Common Mistakes' },
+  { id: 'reading', title: 'Further Reading' },
 ];
 
 // ─── Pixel Character ──────────────────────────────────────────────────────────
@@ -354,7 +355,7 @@ const ActivityCard = ({ item, onClick, onToggleComplete, dark, isAdmin }: {
   isAdmin?: boolean;
 }) => {
   const s = dark ? TAG_DARK[item.tag] : TAG_LIGHT[item.tag];
-  const dot = dark ? s.text : (TAG_LIGHT[item.tag] as any).dot ?? s.text;
+  const dot = dark ? s.text : TAG_LIGHT[item.tag].dot;
   const clickable = item.tag === 'LESSON' || item.tag === 'SELF GUIDED';
   const accent = dark ? '#00ff88' : '#4f46e5';
 
@@ -430,8 +431,9 @@ const AIChatBubble = ({ dark, apiKey, lessonTitle }: { dark: boolean; apiKey: st
       const context = lessonTitle ? `You are an AI tutor for a Spring Boot course. The student is currently viewing the lesson "${lessonTitle}". ` : 'You are an AI tutor for a Spring Boot programming course. ';
       const reply = await callGemini(context + userMsg, apiKey);
       setMessages(prev => [...prev, { role: 'ai', text: reply }]);
-    } catch (e: any) {
-      setMessages(prev => [...prev, { role: 'ai', text: `Error: ${e.message}` }]);
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Unknown error';
+      setMessages(prev => [...prev, { role: 'ai', text: `Error: ${message}` }]);
     }
     setLoading(false);
   };
@@ -739,8 +741,9 @@ Generate all 5 questions in this exact format.`;
       const parsed = parseQuizJSON(raw);
       if (parsed.length === 0) throw new Error('Could not parse quiz. Raw: ' + raw.slice(0, 200));
       setQuizQuestions(parsed);
-    } catch (e: any) {
-      setQuizError(e.message);
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Unknown error';
+      setQuizError(message);
     }
     setQuizLoading(false);
   };
@@ -751,7 +754,10 @@ Generate all 5 questions in this exact format.`;
     try {
       const t = await callGemini(prompt, apiKey);
       setAiResponse(t);
-    } catch (e: any) { setAiResponse(`Error: ${e.message}`); }
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Unknown error';
+      setAiResponse(`Error: ${message}`);
+    }
     setAiLoading(false);
   };
 
@@ -797,9 +803,9 @@ Generate all 5 questions in this exact format.`;
           {/* AI Buttons */}
           <div className="flex flex-wrap gap-3 mb-8">
             {([
-              { mode: 'quiz' as const,    icon: <Sparkles size={13} />,              label: 'Generate Quiz' },
-              { mode: 'summary' as const, icon: <AlignLeft size={13} />,             label: 'Summarize Lesson' },
-              { mode: 'ask' as const,     icon: <MessageCircleQuestion size={13} />, label: 'Ask AI' },
+              { mode: 'quiz' as const, icon: <Sparkles size={13} />, label: 'Generate Quiz' },
+              { mode: 'summary' as const, icon: <AlignLeft size={13} />, label: 'Summarize Lesson' },
+              { mode: 'ask' as const, icon: <MessageCircleQuestion size={13} />, label: 'Ask AI' },
             ]).map(({ mode, icon, label }) => (
               <motion.button key={mode} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                 onClick={() => handleAI(mode)}
@@ -940,7 +946,7 @@ Generate all 5 questions in this exact format.`;
                 Real applications have layers — controllers handle HTTP, services contain business logic, models represent data. Spring's answer is <strong style={{ color: text }}>dependency injection</strong>: you declare what you need, and Spring provides it.
               </p>
               <ul className="space-y-2.5">
-                {['Understand how Spring Boot applications are organized into layers','Explain Inversion of Control (IoC) and the Application Context','Implement constructor injection in a Spring application','Distinguish between constructor injection and field injection'].map((item, i) => (
+                {['Understand how Spring Boot applications are organized into layers', 'Explain Inversion of Control (IoC) and the Application Context', 'Implement constructor injection in a Spring application', 'Distinguish between constructor injection and field injection'].map((item, i) => (
                   <li key={i} className="flex items-start gap-3 text-sm" style={{ color: muted }}>
                     <CheckCircle2 size={15} className="mt-0.5 shrink-0" style={{ color: dark ? '#00ff88' : '#0d9b6b' }} />
                     {item}
@@ -1792,6 +1798,7 @@ const NotificationPanel = ({ dark, onClose }: { dark: boolean; onClose: () => vo
 // ─── Main App ─────────────────────────────────────────────────────────────────
 
 const ProfilePage = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('profile');
   const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
   const [openLesson, setOpenLesson] = useState<string | null>(null);
@@ -1813,15 +1820,26 @@ const ProfilePage = () => {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const bg          = dark ? '#0a0f0d' : '#f9fafb';
-  const sidebarBg   = dark ? 'rgba(12,18,15,0.8)' : '#ffffff';
-  const sidebarBrd  = dark ? 'rgba(255,255,255,0.06)' : '#e5e7eb';
-  const accent      = dark ? '#00ff88' : '#4f46e5';
-  const text        = dark ? '#ffffff' : '#111827';
-  const muted       = dark ? '#9ca3af' : '#6b7280';
-  const cardBg      = dark ? '#0f1713' : '#ffffff';
-  const cardBorder  = dark ? 'rgba(255,255,255,0.05)' : '#e5e7eb';
-  const navActive   = dark
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('email');
+    localStorage.removeItem('currentUserData');
+    window.location.href = '/login';
+  };
+
+  const handleGoLiveMatch = () => {
+    navigate('/live-match');
+  };
+
+  const bg = dark ? '#0a0f0d' : '#f9fafb';
+  const sidebarBg = dark ? 'rgba(12,18,15,0.8)' : '#ffffff';
+  const sidebarBrd = dark ? 'rgba(255,255,255,0.06)' : '#e5e7eb';
+  const accent = dark ? '#00ff88' : '#4f46e5';
+  const text = dark ? '#ffffff' : '#111827';
+  const muted = dark ? '#9ca3af' : '#6b7280';
+  const cardBg = dark ? '#0f1713' : '#ffffff';
+  const cardBorder = dark ? 'rgba(255,255,255,0.05)' : '#e5e7eb';
+  const navActive = dark
     ? { background: 'linear-gradient(to right,rgba(0,255,136,0.15),rgba(0,255,136,0.05))', color: '#00ff88', boxShadow: '0 0 20px rgba(0,255,136,0.18)' }
     : { background: '#eef2ff', color: '#4f46e5' };
   const navInactive = dark ? { color: '#9ca3af' } : { color: '#6b7280' };
@@ -1976,23 +1994,20 @@ const ProfilePage = () => {
 
           {/* Live Match */}
           <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.98 }}
+            onClick={handleGoLiveMatch}
             className="group relative flex items-center gap-3.5 px-5 py-4 rounded-2xl mt-2 overflow-hidden transition-all duration-300"
-            style={{ background: 'linear-gradient(135deg,rgba(185,28,28,0.3),rgba(220,38,38,0.2),rgba(153,27,27,0.15))', border: '1px solid rgba(239,68,68,0.4)', color: '#fecaca', boxShadow: '0 4px 20px rgba(239,68,68,0.25),inset 0 1px 0 rgba(255,255,255,0.08)' }}
+            style={{ background: 'linear-gradient(135deg,rgba(30,41,59,0.65),rgba(51,65,85,0.5),rgba(15,23,42,0.7))', border: '1px solid rgba(148,163,184,0.35)', color: '#e2e8f0', boxShadow: '0 4px 16px rgba(15,23,42,0.25),inset 0 1px 0 rgba(255,255,255,0.06)' }}
             onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(239,68,68,0.7)'; (e.currentTarget as HTMLButtonElement).style.color = '#fff'; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(239,68,68,0.4)'; (e.currentTarget as HTMLButtonElement).style.color = '#fecaca'; }}>
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(148,163,184,0.35)'; (e.currentTarget as HTMLButtonElement).style.color = '#e2e8f0'; }}>
             <div className="flex items-center gap-3.5 relative">
-              <Crown size={24} className="text-yellow-400/90" strokeWidth={2.3} />
+              <Crown size={24} className="text-cyan-300/90" strokeWidth={2.3} />
               <span className="font-semibold tracking-wide text-base">Live Match</span>
             </div>
-            <motion.div className="absolute top-1 right-1.5 text-white text-[8px] font-black uppercase px-2.5 py-1 rounded-md tracking-wider"
-              style={{ background: 'linear-gradient(135deg,#ef4444,#dc2626)', border: '1px solid rgba(239,68,68,0.6)', boxShadow: '0 2px 8px rgba(239,68,68,0.4)' }}
-              initial={{ scale: 0, rotate: -12 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 400, damping: 15, delay: 0.25 }}>
-              NEW
-            </motion.div>
           </motion.button>
         </nav>
 
         <button className="flex items-center gap-3 p-3 rounded-xl transition-all text-sm font-medium"
+          onClick={handleLogout}
           style={{ color: '#f87171' }}
           onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.background = 'rgba(248,113,113,0.08)')}
           onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.background = 'transparent')}>

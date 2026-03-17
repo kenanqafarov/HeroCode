@@ -2,30 +2,62 @@ import { Request, Response } from 'express';
 import Match from '../models/Match';
 import { AuthRequest } from '../middleware/auth.middleware';
 
+const waitingQueue: string[] = [];
+
 export const joinQueue = async (req: AuthRequest, res: Response) => {
   try {
-    // Real matchmaking socket.io üzərindən aparılır
-    // Bu endpoint sadəcə HTTP status qaytarır (frontend polling edəcək)
-    res.json({ success: true, message: 'Queue-yə qoşuldunuz. my-match endpointini yoxlayın.' });
+    const userId = req.user!.id;
+
+    const activeMatch = await Match.findOne({
+      $or: [{ player1Id: userId }, { player2Id: userId }],
+      status: { $in: ['Waiting', 'Active'] }
+    });
+
+    if (activeMatch) {
+      return res.json({ success: true, data: activeMatch, message: 'Artıq aktiv matçınız var.' });
+    }
+
+    if (waitingQueue.includes(userId)) {
+      return res.status(400).json({ success: false, message: 'Artıq növbədəsiniz' });
+    }
+
+    const opponentId = waitingQueue.find((id) => id !== userId);
+    if (opponentId) {
+      const idx = waitingQueue.indexOf(opponentId);
+      if (idx !== -1) waitingQueue.splice(idx, 1);
+
+      const match = await Match.create({
+        player1Id: opponentId,
+        player2Id: userId,
+        status: 'Active',
+      });
+
+      return res.json({ success: true, data: match, message: 'Match tapıldı' });
+    }
+
+    waitingQueue.push(userId);
+    return res.json({ success: true, message: 'Queue-yə qoşuldunuz. Rəqib gözlənilir.' });
   } catch (err: any) {
     res.status(500).json({ success: false, message: err.message });
   }
 };
 
 export const leaveQueue = async (req: AuthRequest, res: Response) => {
-  // Socket.io-da disconnect ilə idarə olunur, burada sadəcə təsdiq
+  const idx = waitingQueue.indexOf(req.user!.id);
+  if (idx !== -1) waitingQueue.splice(idx, 1);
+
   res.json({ success: true, message: 'Queue-dən çıxdınız' });
 };
 
 export const getMyMatch = async (req: AuthRequest, res: Response) => {
   try {
-    let match = await Match.findOne({
+    const match = await Match.findOne({
       $or: [
         { player1Id: req.user!.id },
         { player2Id: req.user!.id }
       ],
       status: { $in: ['Waiting', 'Active'] }
-    }).populate('player1Id player2Id', 'username character');
+    });
 
     if (!match) {
       return res.json({ success: true, data: null });
@@ -93,8 +125,8 @@ export const startGameQuestions = async (req: AuthRequest, res: Response) => {
   try {
     // Realda DB-dən çəkmək olar, indi sadəcə mock
     const mockQuestions = [
-      { id: "q1", description: "Verilmiş ədədi 2-yə vur", functionSignature: "function attack(a) {}", testCases: [{input:5, output:10}] },
-      { id: "q2", description: "Ən böyük ədədi tap", functionSignature: "function attack(arr)", testCases: [{input:[3,1,4], output:4}] }
+      { id: "q1", description: "Verilmiş ədədi 2-yə vur", functionSignature: "function attack(a) {}", testCases: [{ input: 5, output: 10 }] },
+      { id: "q2", description: "Ən böyük ədədi tap", functionSignature: "function attack(arr)", testCases: [{ input: [3, 1, 4], output: 4 }] }
     ];
 
     res.json({ success: true, data: mockQuestions });

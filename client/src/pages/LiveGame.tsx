@@ -1,16 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
+import { io, Socket } from 'socket.io-client';
 import Select, { SingleValue } from 'react-select';
 import Editor from '@monaco-editor/react';
 import PixelCharacter, { EmotionType, ClothingType } from '../components/PixelCharacter';
 
 const ReactSelect = Select as any;
 const MonacoEditor = Editor as any;
+const API_BASE = (import.meta.env.VITE_API_BASE_URL as string) || 'http://localhost:5000/api';
+const SOCKET_URL = ((import.meta.env.VITE_API_BASE_URL as string) || 'http://localhost:5000/api').replace(/\/api\/?$/, '');
 
 // ── Types & Interfaces ──────────────────────────────────────────────────────────
 interface MatchData {
   id: string;
+  _id?: string;
   player1Id: string;
   player2Id: string;
   player1Health: number;
@@ -32,6 +36,7 @@ interface UserCharacter {
 
 interface UserData {
   id: string;
+  _id?: string;
   username: string;
   character?: UserCharacter;
 }
@@ -98,6 +103,7 @@ export default function HeroCode() {
   const [testsPassed, setTestsPassed] = useState(false);
   const outputRef = useRef<HTMLDivElement>(null);
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
+  const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
     if (outputRef.current) {
@@ -140,18 +146,29 @@ export default function HeroCode() {
       }
 
       try {
-        const user: UserData = JSON.parse(storedUser);
-        setCurrentUser(user);
+        const parsedUser: UserData = JSON.parse(storedUser);
+        const normalizedUser: UserData = {
+          ...parsedUser,
+          id: parsedUser.id || parsedUser._id || '',
+        };
 
-        await loadMatchAndOpponent(token, user.id, true);
+        if (!normalizedUser.id) {
+          setError('AUTH_REQUIRED: İstifadəçi ID tapılmadı. Yenidən daxil olun.');
+          setLoading(false);
+          return;
+        }
 
-        const { data: qData } = await axios.get<any[]>(
-          'https://renderdeployback.onrender.com/api/Matchmaking/start-game-questions',
+        setCurrentUser(normalizedUser);
+
+        await loadMatchAndOpponent(token, normalizedUser.id, true);
+
+        const { data: qData } = await axios.get<{ success: boolean; data: Question[] }>(
+          `${API_BASE}/matchmaking/start-game-questions`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
         console.log("Raw suallar:", qData);
-        const loadedQuestions = Array.isArray(qData) ? qData : [];
+        const loadedQuestions = Array.isArray(qData?.data) ? qData.data : [];
         setQuestions(loadedQuestions);
 
         if (loadedQuestions.length > 0) {
@@ -176,7 +193,8 @@ export default function HeroCode() {
 
     pollingRef.current = setInterval(() => {
       const token = localStorage.getItem('token');
-      const userId = currentUser?.id;
+      const storedUser = localStorage.getItem('currentUserData');
+      const userId = storedUser ? (JSON.parse(storedUser).id || JSON.parse(storedUser)._id) : null;
       if (token && userId) {
         loadMatchAndOpponent(token, userId, false);
       }
@@ -187,12 +205,54 @@ export default function HeroCode() {
     };
   }, []);
 
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token || !currentUser?.id) return;
+
+    const socket = io(SOCKET_URL, {
+      transports: ['websocket'],
+      auth: { token },
+    });
+    socketRef.current = socket;
+
+    socket.on('health-update', (payload: any) => {
+      const activeMatchId = match?.id || match?._id;
+      const eventMatchId = payload?.matchId ? String(payload.matchId) : null;
+      if (activeMatchId && eventMatchId && String(activeMatchId) !== eventMatchId) return;
+
+      if (!match) return;
+      const isPlayer1 = match.player1Id === currentUser.id;
+
+      setPlayerHP(isPlayer1 ? payload.player1Health : payload.player2Health);
+      setOpponentHP(isPlayer1 ? payload.player2Health : payload.player1Health);
+
+      if (payload?.status === 'Finished' && payload?.winnerId) {
+        const winner = String(payload.winnerId) === currentUser.id;
+        addOutput(
+          winner ? 'OYUN BİTDİ — SİZ QƏLƏBƏ QAZANDINIZ!' : 'OYUN BİTDİ — RƏQİB QƏLƏBƏ QAZANDI',
+          winner ? 'success' : 'error'
+        );
+      }
+    });
+
+    return () => {
+      socket.disconnect();
+      socketRef.current = null;
+    };
+  }, [currentUser?.id, match?.id, match?._id, match?.player1Id, match?.player2Id]);
+
   const loadMatchAndOpponent = async (token: string, userId: string, showOutput: boolean = true) => {
     try {
-      const { data: matchData } = await axios.get<MatchData>(
-        'https://renderdeployback.onrender.com/api/Matchmaking/my-match',
+      const { data: payload } = await axios.get<{ success: boolean; data: MatchData | null }>(
+        `${API_BASE}/matchmaking/my-match`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
+
+      const matchData = payload?.data;
+      if (!matchData) {
+        setMatch(null);
+        return;
+      }
 
       setMatch(matchData);
 
@@ -212,11 +272,14 @@ export default function HeroCode() {
       const opponentId = isPlayer1 ? matchData.player2Id : matchData.player1Id;
 
       if (!opponent || opponent.id !== opponentId) {
-        const { data: oppData } = await axios.get<UserData>(
-          `https://renderdeployback.onrender.com/api/Users/${opponentId}`,
+        const { data: oppPayload } = await axios.get<{ success: boolean; data: UserData }>(
+          `${API_BASE}/users/${opponentId}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        setOpponent(oppData);
+        const oppData = oppPayload?.data;
+        if (oppData) {
+          setOpponent({ ...oppData, id: oppData.id || oppData._id || opponentId });
+        }
       }
     } catch (err: any) {
       console.error("Match yeniləmə xətası:", err);
@@ -355,22 +418,27 @@ export default function HeroCode() {
     addOutput('FATİL ZƏRBƏ ATILIR...', 'success');
 
     try {
-      const token = localStorage.getItem('token');
-      await axios.post(
-        'https://renderdeployback.onrender.com/api/Matchmaking/attack',
-        10,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-      addOutput('Zərbə uğurla göndərildi! Rəqibə 10 zərər vuruldu.', 'success');
-
-      if (token && currentUser?.id) {
-        await loadMatchAndOpponent(token, currentUser.id, true);
+      const matchId = match?.id || match?._id;
+      if (!matchId) {
+        throw new Error('Aktiv match id tapılmadı');
       }
+
+      if (socketRef.current?.connected) {
+        socketRef.current.emit('attack', { matchId, damage: 10 });
+      } else {
+        const token = localStorage.getItem('token');
+        await axios.post(
+          `${API_BASE}/matchmaking/attack`,
+          { damage: 10 },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+      }
+      addOutput('Zərbə uğurla göndərildi! Rəqibə 10 zərər vuruldu.', 'success');
 
       setCurrentQuestionIndex((prev) => {
         const nextIndex = prev + 1;
@@ -402,7 +470,7 @@ export default function HeroCode() {
     try {
       const token = localStorage.getItem('token');
       await axios.post(
-        'https://renderdeployback.onrender.com/api/Matchmaking/leave-match',
+        `${API_BASE}/matchmaking/leave-match`,
         {},
         { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } }
       );
@@ -580,36 +648,36 @@ export default function HeroCode() {
 
         <div className="flex-1 relative flex items-center justify-around pointer-events-none gap-10 md:gap-16">
 
-  {/* Sol – Öz personaj */}
-  <motion.div
-    initial={{ x: -100, opacity: 0 }}
-    animate={{ x: 0, opacity: 1 }}
-    transition={{ delay: 0.3, duration: 0.7 }}
-    className="w-24 h-24 md:w-36 md:h-36 flex items-center justify-center transform-gpu"
-  >
-    <div className="scale-[1.8] md:scale-[2.1]">
-      <PixelCharacter char={getCharProps(currentUser)} />
-    </div>
-  </motion.div>
+          {/* Sol – Öz personaj */}
+          <motion.div
+            initial={{ x: -100, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ delay: 0.3, duration: 0.7 }}
+            className="w-24 h-24 md:w-36 md:h-36 flex items-center justify-center transform-gpu"
+          >
+            <div className="scale-[1.8] md:scale-[2.1]">
+              <PixelCharacter char={getCharProps(currentUser)} />
+            </div>
+          </motion.div>
 
-  {/* Sağ – Rəqib (mirror) */}
-  <motion.div
-    animate={{
-      scale: isHit ? [1, 1.10, 1] : 1,
-      filter: isHit ? 'brightness(2.3) saturate(1.5)' : 'brightness(1)',
-    }}
-    transition={{
-      duration: isHit ? 0.5 : 0.3,
-      scale: isHit ? { times: [0, 0.5, 1] } : undefined,
-    }}
-    className="w-24 h-24 md:w-36 md:h-36 flex items-center justify-center scale-x-[-1] transform-gpu"
-  >
-    <div className="scale-[1.8] md:scale-[2.1]">
-      <PixelCharacter char={getCharProps(opponent)} />
-    </div>
-  </motion.div>
+          {/* Sağ – Rəqib (mirror) */}
+          <motion.div
+            animate={{
+              scale: isHit ? [1, 1.10, 1] : 1,
+              filter: isHit ? 'brightness(2.3) saturate(1.5)' : 'brightness(1)',
+            }}
+            transition={{
+              duration: isHit ? 0.5 : 0.3,
+              scale: isHit ? { times: [0, 0.5, 1] } : undefined,
+            }}
+            className="w-24 h-24 md:w-36 md:h-36 flex items-center justify-center scale-x-[-1] transform-gpu"
+          >
+            <div className="scale-[1.8] md:scale-[2.1]">
+              <PixelCharacter char={getCharProps(opponent)} />
+            </div>
+          </motion.div>
 
-</div>
+        </div>
 
         <div className="h-1/3 bg-black/90 border-t border-yellow-900/50 flex flex-col relative z-30">
           <div className="flex p-3 gap-3 bg-zinc-950 border-b border-zinc-800">

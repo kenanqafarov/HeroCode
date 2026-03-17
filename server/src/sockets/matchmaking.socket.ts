@@ -33,6 +33,9 @@ export const matchmakingSocket = (io: Server) => {
       return;
     }
 
+    // User-specific room for targeted realtime updates
+    socket.join(userId);
+
     // ----------------------
     // Queue-yə qoşul
     // ----------------------
@@ -49,7 +52,7 @@ export const matchmakingSocket = (io: Server) => {
           player1Id: opponent.userId,
           player2Id: userId,
           status: 'Active',
-          questions: ['q1','q2','q3','q4','q5'] // realda DB-dən çək
+          questions: ['q1', 'q2', 'q3', 'q4', 'q5'] // realda DB-dən çək
         });
 
         await match.save();
@@ -67,6 +70,14 @@ export const matchmakingSocket = (io: Server) => {
         waitingPlayers.push({ userId, socketId: socket.id });
         socket.emit('queue-status', { message: 'Növbədə gözləyin...' });
       }
+    });
+
+    socket.on('leave-queue', () => {
+      const idx = waitingPlayers.findIndex(p => p.userId === userId);
+      if (idx !== -1) {
+        waitingPlayers.splice(idx, 1);
+      }
+      socket.emit('queue-status', { message: 'Queue-dən çıxdınız' });
     });
 
     // ----------------------
@@ -94,12 +105,26 @@ export const matchmakingSocket = (io: Server) => {
 
       await match.save();
 
-      io.to(match.player1Id.toString()).to(match.player2Id?.toString() || '').emit('health-update', {
+      const player1Room = match.player1Id.toString();
+      const player2Room = match.player2Id?.toString();
+
+      io.to(player1Room).emit('health-update', {
+        matchId: match._id,
         player1Health: match.player1Health,
         player2Health: match.player2Health,
         status: match.status,
         winnerId: match.winnerId
       });
+
+      if (player2Room) {
+        io.to(player2Room).emit('health-update', {
+          matchId: match._id,
+          player1Health: match.player1Health,
+          player2Health: match.player2Health,
+          status: match.status,
+          winnerId: match.winnerId
+        });
+      }
     });
 
     socket.on('disconnect', () => {

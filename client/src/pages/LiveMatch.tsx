@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { io, Socket } from 'socket.io-client';
 import {
   Sword, Database, Zap, Shield, Braces,
   CircuitBoard, FileCode2, Terminal, ArrowLeft, X,
@@ -9,17 +10,18 @@ import { useNavigate } from 'react-router-dom';
 const glowColor = '#22ff99';
 
 const orbitItems = [
-  { Icon: Braces,    color: glowColor },
-  { Icon: Sword,     color: '#ff4d73' },
+  { Icon: Braces, color: glowColor },
+  { Icon: Sword, color: '#ff4d73' },
   { Icon: CircuitBoard, color: '#a855f7' },
   { Icon: FileCode2, color: '#facc15' },
-  { Icon: Terminal,  color: glowColor },
-  { Icon: Database,  color: '#10b981' },
-  { Icon: Zap,       color: '#eab308' },
-  { Icon: Shield,    color: '#3b82f6' },
+  { Icon: Terminal, color: glowColor },
+  { Icon: Database, color: '#10b981' },
+  { Icon: Zap, color: '#eab308' },
+  { Icon: Shield, color: '#3b82f6' },
 ];
 
-const API_BASE = 'https://renderdeployback.onrender.com/api';
+const API_BASE = (import.meta.env.VITE_API_BASE_URL as string) || 'http://localhost:5000/api';
+const SOCKET_URL = ((import.meta.env.VITE_API_BASE_URL as string) || 'http://localhost:5000/api').replace(/\/api\/?$/, '');
 
 const statusPhrases = [
   "NEURAL NETWORKS SCANNING...",
@@ -42,11 +44,38 @@ const LiveMatch = () => {
 
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
+  const socketRef = useRef<Socket | null>(null);
 
   // =============================================
   //  1. Komponent yüklənəndə dərhal /my-match yoxla
   //     (əgər artıq aktiv matç varsa → dərhal oyuna keç)
   // =============================================
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    const socket = io(SOCKET_URL, {
+      transports: ['websocket'],
+      auth: { token },
+    });
+    socketRef.current = socket;
+
+    socket.on('queue-status', ({ message }: { message: string }) => {
+      if (message) setStatusText(message.toUpperCase());
+    });
+
+    socket.on('match-found', ({ matchId }: { matchId: string }) => {
+      if (matchId) {
+        navigate(`/live-match/game/${matchId}`, { replace: true });
+      }
+    });
+
+    return () => {
+      socket.disconnect();
+      socketRef.current = null;
+    };
+  }, [navigate]);
+
   useEffect(() => {
     const checkExistingMatch = async () => {
       const token = localStorage.getItem('token');
@@ -56,7 +85,7 @@ const LiveMatch = () => {
       }
 
       try {
-        const res = await fetch(`${API_BASE}/Matchmaking/my-match`, {
+        const res = await fetch(`${API_BASE}/matchmaking/my-match`, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -71,9 +100,11 @@ const LiveMatch = () => {
         }
 
         if (res.ok) {
-          const data = await res.json();
-          if (data?.id && data?.status === 'Active') {
-            navigate(`/live-match/game/${data.id}`, { replace: true });
+          const payload = await res.json();
+          const match = payload?.data ?? payload;
+          const matchId = match?.id || match?._id;
+          if (matchId && match?.status === 'Active') {
+            navigate(`/live-match/game/${matchId}`, { replace: true });
           }
         }
       } catch (err) {
@@ -112,7 +143,7 @@ const LiveMatch = () => {
       if (!token) return;
 
       try {
-        const res = await fetch(`${API_BASE}/Matchmaking/my-match`, {
+        const res = await fetch(`${API_BASE}/matchmaking/my-match`, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -127,11 +158,13 @@ const LiveMatch = () => {
         }
 
         if (res.ok) {
-          const data = await res.json();
+          const payload = await res.json();
+          const match = payload?.data ?? payload;
+          const matchId = match?.id || match?._id;
 
           // Aktiv matç tapılıbsa → oyuna yönləndir
-          if (data?.id && data?.status === 'Active') {
-            navigate(`/live-match/game/${data.id}`, { replace: true });
+          if (matchId && match?.status === 'Active') {
+            navigate(`/live-match/game/${matchId}`, { replace: true });
             return;
           }
         }
@@ -162,34 +195,23 @@ const LiveMatch = () => {
     }
 
     try {
-      const res = await fetch(`${API_BASE}/Matchmaking/join`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (res.status === 401 || res.status === 403) {
-        localStorage.removeItem('token');
-        navigate('/login', { replace: true });
+      if (!socketRef.current) {
         return false;
       }
 
-      // 200 → yeni qoşuldu
-      // 400 → artıq queuedədir (çox vaxt təhlükəsizdir, davam edirik)
-      if (res.ok || res.status === 400) {
-        setSearching(true);
-
-        // 75 saniyədən sonra avtomatik dayandır (timeout)
-        setTimeout(() => {
-          setSearching(false);
-        }, 75000);
-
-        return true;
+      if (!socketRef.current.connected) {
+        socketRef.current.connect();
       }
 
-      return false;
+      socketRef.current.emit('join-queue');
+      setSearching(true);
+
+      // 75 saniyədən sonra avtomatik dayandır (timeout)
+      setTimeout(() => {
+        setSearching(false);
+      }, 75000);
+
+      return true;
     } catch (err) {
       console.error('Join queue error:', err);
       return false;
@@ -201,13 +223,9 @@ const LiveMatch = () => {
     if (!token) return;
 
     try {
-      await fetch(`${API_BASE}/Matchmaking/leave-queue`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      if (socketRef.current?.connected) {
+        socketRef.current.emit('leave-queue');
+      }
     } catch (err) {
       console.error('Leave queue error:', err);
     } finally {
@@ -232,10 +250,10 @@ const LiveMatch = () => {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#050806] text-white font-['JetBrains_Mono',monospace] flex items-center justify-center p-4">
-      
+
       {/* Background grid */}
       <div className="absolute inset-0 z-0 pointer-events-none">
-        <div 
+        <div
           className="absolute inset-0 opacity-25"
           style={{
             backgroundImage: `linear-gradient(${glowColor}1a 1px, transparent 1px), linear-gradient(90deg, ${glowColor}1a 1px, transparent 1px)`,
@@ -248,7 +266,7 @@ const LiveMatch = () => {
       </div>
 
       {searching && (
-        <motion.div 
+        <motion.div
           initial={{ top: '-15%' }}
           animate={{ top: '115%' }}
           transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
@@ -360,22 +378,22 @@ const LiveMatch = () => {
                 <span>QUEUE STATUS: ACTIVE</span>
                 <span>PING: 18–42ms</span>
               </div>
-              
+
               <div className="relative h-6 bg-black/70 border border-[#22ff99]/50 rounded overflow-hidden shadow-inner">
                 <div className="absolute inset-0 flex justify-between px-2 pointer-events-none opacity-40">
                   {[...Array(30)].map((_, i) => (
                     <div key={i} className="w-px h-full bg-[#22ff99]/40" />
                   ))}
                 </div>
-                
+
                 <motion.div
                   className="h-full bg-gradient-to-r from-[#22ff99]/30 to-[#22ff99] shadow-[0_0_20px_#22ff99aa]"
                   initial={{ width: '0%' }}
                   animate={{ width: '100%' }}
                   transition={{ duration: 60, ease: "linear" }}
                 />
-                
-                <motion.div 
+
+                <motion.div
                   animate={{ x: ['-150%', '150%'] }}
                   transition={{ duration: 2.8, repeat: Infinity, ease: "circInOut" }}
                   className="absolute inset-y-0 w-32 bg-gradient-to-r from-transparent via-white/25 to-transparent"

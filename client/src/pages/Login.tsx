@@ -230,11 +230,14 @@ const HeroAuth = () => {
 
     try {
       const registerPayload = {
+        username: formData.username.trim(),
         email: formData.email.trim(),
         password: formData.password,
         firstName: formData.name.trim(),
         lastName: formData.surname.trim(),
         dateOfBirth: new Date(formData.birthDate).toISOString(),
+        skillLevel: formData.skillLevel,
+        reason: formData.reason.trim(),
       };
 
       const registerRes = await fetch(`${API_BASE}/auth/register`, {
@@ -268,7 +271,7 @@ const HeroAuth = () => {
         username: char.username.trim().toUpperCase(),
       };
 
-      const updateRes = await fetch(`${API_BASE}/user/character`, {
+      const updateRes = await fetch(`${API_BASE}/users/character`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -413,9 +416,8 @@ const HeroAuth = () => {
             <button
               onClick={handleLogin}
               disabled={loading}
-              className={`cyber-button-primary w-full flex items-center justify-center gap-2 ${
-                loading ? 'opacity-70 cursor-not-allowed' : ''
-              }`}
+              className={`cyber-button-primary w-full flex items-center justify-center gap-2 ${loading ? 'opacity-70 cursor-not-allowed' : ''
+                }`}
             >
               {loading ? (
                 <>
@@ -511,11 +513,10 @@ const HeroAuth = () => {
                         <button
                           key={g}
                           onClick={() => setChar({ ...char, gender: g })}
-                          className={`flex-1 py-4 rounded-xl border-2 text-xs font-black uppercase transition-all duration-300 ${
-                            char.gender === g
+                          className={`flex-1 py-4 rounded-xl border-2 text-xs font-black uppercase transition-all duration-300 ${char.gender === g
                               ? 'border-primary bg-primary/10 text-foreground shadow-[0_0_25px_hsl(var(--primary)/0.2)]'
                               : 'border-border text-muted-foreground hover:border-muted-foreground'
-                          }`}
+                            }`}
                         >
                           {g.toUpperCase()}_UNIT
                         </button>
@@ -534,11 +535,10 @@ const HeroAuth = () => {
                           onClick={() => setChar({ ...char, emotion: e.value })}
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
-                          className={`px-4 py-3 rounded-xl border-2 text-sm transition-all duration-300 flex items-center gap-2 ${
-                            char.emotion === e.value
+                          className={`px-4 py-3 rounded-xl border-2 text-sm transition-all duration-300 flex items-center gap-2 ${char.emotion === e.value
                               ? 'border-primary bg-primary/10 text-foreground'
                               : 'border-border text-muted-foreground hover:border-muted-foreground'
-                          }`}
+                            }`}
                         >
                           <span className="text-lg">{e.emoji}</span>
                           <span className="text-[10px] font-black uppercase">{e.label}</span>
@@ -558,11 +558,10 @@ const HeroAuth = () => {
                           onClick={() => setChar({ ...char, clothing: c.value })}
                           whileHover={{ scale: 1.03 }}
                           whileTap={{ scale: 0.97 }}
-                          className={`py-4 rounded-xl border-2 text-xs font-black uppercase transition-all duration-300 ${
-                            char.clothing === c.value
+                          className={`py-4 rounded-xl border-2 text-xs font-black uppercase transition-all duration-300 ${char.clothing === c.value
                               ? 'border-primary bg-primary/10 text-foreground'
                               : 'border-border text-muted-foreground hover:border-muted-foreground'
-                          }`}
+                            }`}
                         >
                           {c.label}
                         </motion.button>
@@ -790,11 +789,10 @@ const HeroAuth = () => {
                           onClick={() => setFormData({ ...formData, skillLevel: level.value })}
                           whileHover={{ scale: 1.03 }}
                           whileTap={{ scale: 0.97 }}
-                          className={`py-4 rounded-xl border-2 text-xs font-black uppercase transition-all duration-300 ${
-                            formData.skillLevel === level.value
+                          className={`py-4 rounded-xl border-2 text-xs font-black uppercase transition-all duration-300 ${formData.skillLevel === level.value
                               ? 'border-primary bg-primary/10 text-foreground'
                               : 'border-border text-muted-foreground hover:border-muted-foreground'
-                          }`}
+                            }`}
                         >
                           {level.label}
                         </motion.button>
@@ -846,9 +844,8 @@ const HeroAuth = () => {
                 <button
                   onClick={handleDeploy}
                   disabled={loading || !isRegisterFormValid()}
-                  className={`flex-1 flex items-center justify-center gap-2 cyber-button-primary ${
-                    loading || !isRegisterFormValid() ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
+                  className={`flex-1 flex items-center justify-center gap-2 cyber-button-primary ${loading || !isRegisterFormValid() ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
                 >
                   {loading ? (
                     <>
