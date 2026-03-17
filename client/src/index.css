@@ -1,0 +1,248 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* HeroCode: The Logical Dungeon - Design System
+   Dark dungeon aesthetic with neon code accents */
+
+@layer base {
+  :root {
+    /* Dark dungeon background */
+    --background: 222 47% 6%;
+    --foreground: 210 40% 96%;
+
+    /* Card surfaces - slightly lighter than bg */
+    --card: 222 47% 9%;
+    --card-foreground: 210 40% 96%;
+
+    --popover: 222 47% 9%;
+    --popover-foreground: 210 40% 96%;
+
+    /* Primary - Neon Green (code/success) */
+    --primary: 152 100% 50%;
+    --primary-foreground: 222 47% 6%;
+
+    /* Secondary - Electric Blue */
+    --secondary: 199 100% 50%;
+    --secondary-foreground: 222 47% 6%;
+
+    /* Muted for subtle elements */
+    --muted: 222 30% 15%;
+    --muted-foreground: 215 20% 55%;
+
+    /* Accent - Magical Purple */
+    --accent: 270 100% 65%;
+    --accent-foreground: 210 40% 98%;
+
+    /* Destructive - Error Red */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    /* Borders and inputs */
+    --border: 222 30% 18%;
+    --input: 222 30% 18%;
+    --ring: 152 100% 50%;
+
+    --radius: 0.75rem;
+
+    /* Custom gradients */
+    --gradient-hero: linear-gradient(135deg, hsl(222 47% 6%) 0%, hsl(270 50% 10%) 50%, hsl(222 47% 6%) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(222 47% 11%) 0%, hsl(222 47% 7%) 100%);
+    --gradient-neon-green: linear-gradient(90deg, hsl(152 100% 45%) 0%, hsl(152 100% 55%) 100%);
+    --gradient-neon-blue: linear-gradient(90deg, hsl(199 100% 45%) 0%, hsl(199 100% 55%) 100%);
+    --gradient-purple: linear-gradient(90deg, hsl(270 100% 60%) 0%, hsl(290 100% 65%) 100%);
+
+    /* Glow effects */
+    --glow-green: 0 0 20px hsl(152 100% 50% / 0.5), 0 0 40px hsl(152 100% 50% / 0.3);
+    --glow-blue: 0 0 20px hsl(199 100% 50% / 0.5), 0 0 40px hsl(199 100% 50% / 0.3);
+    --glow-purple: 0 0 20px hsl(270 100% 65% / 0.5), 0 0 40px hsl(270 100% 65% / 0.3);
+    --glow-text: 0 0 10px hsl(152 100% 50% / 0.8), 0 0 30px hsl(152 100% 50% / 0.4);
+
+    /* Sidebar (keeping for compatibility) */
+    --sidebar-background: 222 47% 8%;
+    --sidebar-foreground: 210 40% 96%;
+    --sidebar-primary: 152 100% 50%;
+    --sidebar-primary-foreground: 222 47% 6%;
+    --sidebar-accent: 222 30% 15%;
+    --sidebar-accent-foreground: 210 40% 96%;
+    --sidebar-border: 222 30% 18%;
+    --sidebar-ring: 152 100% 50%;
+  }
+
+  /* No light mode - this is a dungeon! */
+  .dark {
+    /* Same as root - always dark */
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+  .navLinkNavigators{
+    color: #f8f8f8 !important
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--gradient-hero);
+    background-attachment: fixed;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Montserrat', system-ui, sans-serif;
+  }
+
+  code, pre {
+    font-family: 'JetBrains Mono', monospace;
+  }
+  h1{
+    font-size: 64px ;
+  }
+  h2{
+    /* font-size: 36px !important; */
+  }
+  h3{
+    font-size: 22px !important;
+  }
+  body{
+    font-size: 16px !important;
+  }
+
+}
+
+@layer components {
+  /* Glowing text effect */
+  .text-glow {
+    text-shadow: var(--glow-text);
+  }
+
+  .text-glow-blue {
+    text-shadow: 0 0 10px hsl(199 100% 50% / 0.8), 0 0 30px hsl(199 100% 50% / 0.4);
+  }
+
+  .text-glow-purple {
+    text-shadow: 0 0 10px hsl(270 100% 65% / 0.8), 0 0 30px hsl(270 100% 65% / 0.4);
+  }
+
+  /* Neon border effect */
+  .border-glow {
+    box-shadow: inset 0 0 20px hsl(152 100% 50% / 0.1), var(--glow-green);
+  }
+
+  .border-glow-blue {
+    box-shadow: inset 0 0 20px hsl(199 100% 50% / 0.1), var(--glow-blue);
+  }
+
+  /* Card with dungeon aesthetic */
+  .dungeon-card {
+    background: var(--gradient-card);
+    border: 1px solid hsl(var(--border));
+    position: relative;
+    overflow: hidden;
+  }
+
+  .dungeon-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, hsl(152 100% 50% / 0.05) 0%, transparent 50%);
+    pointer-events: none;
+  }
+
+  /* Pixel-art style corners */
+  .pixel-corners {
+    clip-path: polygon(
+      0 8px, 8px 8px, 8px 0,
+      calc(100% - 8px) 0, calc(100% - 8px) 8px, 100% 8px,
+      100% calc(100% - 8px), calc(100% - 8px) calc(100% - 8px), calc(100% - 8px) 100%,
+      8px 100%, 8px calc(100% - 8px), 0 calc(100% - 8px)
+    );
+  }
+
+  /* Code block styling */
+  .code-block {
+    background: hsl(222 47% 8%);
+    border: 1px solid hsl(var(--border));
+    border-left: 3px solid hsl(var(--primary));
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* Floating particles animation */
+  @keyframes float {
+    0%, 100% { transform: translateY(0) translateX(0); }
+    25% { transform: translateY(-10px) translateX(5px); }
+    50% { transform: translateY(-5px) translateX(-5px); }
+    75% { transform: translateY(-15px) translateX(3px); }
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  /* Pulse glow animation */
+  @keyframes pulse-glow {
+    0%, 100% { opacity: 1; filter: brightness(1); }
+    50% { opacity: 0.8; filter: brightness(1.2); }
+  }
+
+  .animate-pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+
+  /* Typing cursor animation */
+  @keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+  }
+
+  .animate-blink {
+    animation: blink 1s step-end infinite;
+  }
+
+  /* Scan line effect */
+  .scanlines::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      hsl(0 0% 0% / 0.03) 2px,
+      hsl(0 0% 0% / 0.03) 4px
+    );
+    pointer-events: none;
+  }
+}
+
+@layer utilities {
+  /* Gradient text */
+  .gradient-text-green {
+    background: var(--gradient-neon-green);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .gradient-text-blue {
+    background: var(--gradient-neon-blue);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .gradient-text-purple {
+    background: var(--gradient-purple);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
