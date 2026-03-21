@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import {
   Eye, EyeOff, Sparkles, Loader2, ArrowLeft, ArrowRight,
   Rocket, User, Lock, Calendar, Target, Palette, CheckCircle,
@@ -142,14 +142,34 @@ const HeroAuth = () => {
   const [showPw, setShowPw] = useState(false);
   const [showCPw, setShowCPw] = useState(false);
 
-  /* ── 3D card tilt ───────────────────────────────────── */
+  /* ── Global 3D Parallax ─────────────────────────────── */
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+
+  const springConfig = { damping: 30, stiffness: 150 };
+  const rotateX = useSpring(useTransform(mouseY, [-1, 1], [6, -6]), springConfig);
+  const rotateY = useSpring(useTransform(mouseX, [-1, 1], [-6, 6]), springConfig);
+  const bgX = useSpring(useTransform(mouseX, [-1, 1], [-25, 25]), springConfig);
+  const bgY = useSpring(useTransform(mouseY, [-1, 1], [-25, 25]), springConfig);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      const nx = (e.clientX / window.innerWidth) * 2 - 1;
+      const ny = (e.clientY / window.innerHeight) * 2 - 1;
+      mouseX.set(nx);
+      mouseY.set(ny);
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, [mouseX, mouseY]);
+
+  /* ── Card Shine Effect ──────────────────────────────── */
   const cardRef = useRef<HTMLDivElement>(null);
   const onMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (!cardRef.current) return;
     const { left, top, width, height } = cardRef.current.getBoundingClientRect();
     const x = (e.clientX - left) / width - 0.5;
     const y = (e.clientY - top) / height - 0.5;
-    cardRef.current.style.transform = `perspective(900px) rotateY(${x * 8}deg) rotateX(${-y * 8}deg)`;
     const shine = cardRef.current.querySelector('.hero-shine') as HTMLElement;
     if (shine) {
       shine.style.setProperty('--mx', `${(x + 0.5) * 100}%`);
@@ -158,7 +178,11 @@ const HeroAuth = () => {
   }, []);
   const onMouseLeave = useCallback(() => {
     if (!cardRef.current) return;
-    cardRef.current.style.transform = 'perspective(900px) rotateY(0deg) rotateX(0deg)';
+    const shine = cardRef.current.querySelector('.hero-shine') as HTMLElement;
+    if (shine) {
+      shine.style.setProperty('--mx', `50%`);
+      shine.style.setProperty('--my', `50%`);
+    }
   }, []);
 
   /* ── Token check ────────────────────────────────────── */
@@ -524,7 +548,8 @@ const HeroAuth = () => {
       <div className="hero-noise" />
 
       {/* ── Floating hex decorations ── */}
-      {[
+      <motion.div style={{ x: bgX, y: bgY, position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 1 }}>
+        {[
         { x: '8%', y: '10%', size: 180, color: '#2563eb', dur: 7, delay: 0 },
         { x: '85%', y: '5%', size: 120, color: '#06b6d4', dur: 9, delay: 1.5 },
         { x: '75%', y: '70%', size: 200, color: '#2563eb', dur: 11, delay: 0.5 },
@@ -538,6 +563,7 @@ const HeroAuth = () => {
           <HexSVG size={h.size} color={h.color} />
         </motion.div>
       ))}
+      </motion.div>
 
       {/* ── Progress bar (register only) ── */}
       {mode === 'register' && (
@@ -571,8 +597,13 @@ const HeroAuth = () => {
         position: 'relative', zIndex: 10, minHeight: '100vh',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         padding: '24px 16px',
+        perspective: '1200px'
       }}>
-        <AnimatePresence mode="wait" custom={dir}>
+        <motion.div style={{
+          rotateX, rotateY, transformStyle: 'preserve-3d',
+          width: '100%', display: 'flex', justifyContent: 'center'
+        }}>
+          <AnimatePresence mode="wait" custom={dir}>
 
           {/* ══ WELCOME SCREEN ══ */}
           {mode === 'welcome' && (
@@ -770,7 +801,8 @@ const HeroAuth = () => {
             </motion.div>
           )}
 
-        </AnimatePresence>
+          </AnimatePresence>
+        </motion.div>
       </div>
     </div>
   );
