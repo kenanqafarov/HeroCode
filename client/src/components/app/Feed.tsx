@@ -41,6 +41,12 @@ const Feed = ({ refreshing, onBlogCreated }: FeedProps) => {
     fetchBlogs();
   }, [refreshing]);
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      (window as any).openBlogEditor = () => setIsBlogEditorOpen(true);
+    }
+  }, []);
+
   const fetchBlogs = async () => {
     try {
       setLoading(true);
@@ -193,10 +199,6 @@ const Feed = ({ refreshing, onBlogCreated }: FeedProps) => {
         onSubmit={handleCreateBlog}
       />
 
-      {/* Expose blog editor state to parent */}
-      {typeof window !== "undefined" && (
-        (window as any).openBlogEditor = () => setIsBlogEditorOpen(true)
-      )}
     </>
   );
 };

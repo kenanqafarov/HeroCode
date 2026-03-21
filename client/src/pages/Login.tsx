@@ -1,49 +1,128 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Eye, EyeOff, Sparkles, Loader2, ArrowLeft } from 'lucide-react';
+import {
+  Eye, EyeOff, Sparkles, Loader2, ArrowLeft, ArrowRight,
+  Rocket, User, Lock, Calendar, Target, Palette, CheckCircle,
+  Zap, Code2, Globe, Gamepad2
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import PixelCharacter, { EmotionType, ClothingType } from '../components/PixelCharacter';
 import '@/pages/login.css';
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL as string) || 'https://herocodebackend-ym9g.onrender.com/api';
 
+/* ── Constants ──────────────────────────────────────────── */
 const EMOTIONS: { value: EmotionType; label: string; emoji: string }[] = [
-  { value: 'neutral', label: 'Neutral', emoji: '😐' },
+  { value: 'neutral', label: 'Cool', emoji: '😐' },
   { value: 'happy', label: 'Happy', emoji: '😊' },
-  { value: 'angry', label: 'Angry', emoji: '😠' },
-  { value: 'sad', label: 'Sad', emoji: '😢' },
-  { value: 'surprised', label: 'Surprised', emoji: '😲' },
+  { value: 'angry', label: 'Fierce', emoji: '😠' },
+  { value: 'sad', label: 'Chill', emoji: '😢' },
+  { value: 'surprised', label: 'Amazed', emoji: '😲' },
 ];
 
-const CLOTHING: { value: ClothingType; label: string }[] = [
-  { value: 'tshirt', label: 'T-SHIRT' },
-  { value: 'hoodie', label: 'HOODIE' },
-  { value: 'jacket', label: 'JACKET' },
-  { value: 'dress', label: 'DRESS' },
+const CLOTHING: { value: ClothingType; label: string; icon: string }[] = [
+  { value: 'tshirt', label: 'T-Shirt', icon: '👕' },
+  { value: 'hoodie', label: 'Hoodie', icon: '🧥' },
+  { value: 'jacket', label: 'Jacket', icon: '🥼' },
+  { value: 'dress', label: 'Dress', icon: '👗' },
 ];
 
 const SKILL_LEVELS = [
-  { value: 'beginner', label: 'Beginner' },
-  { value: 'intermediate', label: 'Intermediate' },
-  { value: 'advanced', label: 'Advanced' },
-  { value: 'expert', label: 'Expert' },
+  { value: 'beginner', label: 'Beginner', icon: '🌱', desc: 'Just starting out', color: '#22c55e' },
+  { value: 'intermediate', label: 'Intermediate', icon: '⚡', desc: 'Know the fundamentals', color: '#3b82f6' },
+  { value: 'advanced', label: 'Advanced', icon: '🔥', desc: 'Building real projects', color: '#f97316' },
+  { value: 'expert', label: 'Expert', icon: '💎', desc: 'Master of the craft', color: '#a855f7' },
 ];
 
+const REASONS = [
+  { value: 'career', label: 'Build my career', icon: <Target size={16} /> },
+  { value: 'freelance', label: 'Take freelance work', icon: <Globe size={16} /> },
+  { value: 'startup', label: 'Start my own company', icon: <Rocket size={16} /> },
+  { value: 'hobby', label: 'Learn as a hobby', icon: <Zap size={16} /> },
+  { value: 'gaming', label: 'Game development', icon: <Gamepad2 size={16} /> },
+  { value: 'other', label: 'Other reason', icon: <Code2 size={16} /> },
+];
+
+const HAIR_COLORS = ['#b96321', '#212121', '#6d4c41', '#f44336', '#ffffff', '#a855f7', '#fbbf24', '#14b8a6'];
+const SKIN_TONES = ['#ffdbac', '#f1c27d', '#e0ac69', '#c68642', '#8d5524', '#5c3a21'];
+const OUTFIT_COLORS = ['#22c55e', '#3b82f6', '#a855f7', '#ef4444', '#f97316', '#334155', '#ec4899', '#14b8a6'];
+
+/* ── Floating hex SVG ───────────────────────────────────── */
+const HexSVG = ({ size = 120, color = '#2563eb' }: { size?: number; color?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 100 100" fill="none">
+    <polygon
+      points="50,5 93,27.5 93,72.5 50,95 7,72.5 7,27.5"
+      stroke={color} strokeWidth="1.5" fill="none"
+    />
+    <polygon
+      points="50,18 80,34 80,66 50,82 20,66 20,34"
+      stroke={color} strokeWidth="0.5" fill={color} fillOpacity="0.04"
+    />
+  </svg>
+);
+
+/* ── Slide variants ─────────────────────────────────────── */
+const slideVariants = {
+  enter: (dir: number) => ({ x: dir > 0 ? '60%' : '-60%', opacity: 0 }),
+  center: { x: 0, opacity: 1 },
+  exit: (dir: number) => ({ x: dir > 0 ? '-60%' : '60%', opacity: 0 }),
+};
+const transition = { type: 'spring' as const, stiffness: 280, damping: 30 };
+
+/* ── Shared input component ─────────────────────────────── */
+const HeroInput = ({
+  label, type = 'text', value, onChange, placeholder, error, icon, right
+}: {
+  label: string; type?: string; value: string;
+  onChange: (v: string) => void; placeholder?: string;
+  error?: string; icon?: React.ReactNode; right?: React.ReactNode;
+}) => (
+  <div>
+    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, letterSpacing: '0.08em', color: 'rgba(240,244,255,0.5)', marginBottom: 8, textTransform: 'uppercase', fontFamily: 'var(--hero-mono)' }}>
+      {label}
+    </label>
+    <div style={{ position: 'relative' }}>
+      {icon && (
+        <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'rgba(240,244,255,0.3)', pointerEvents: 'none' }}>
+          {icon}
+        </span>
+      )}
+      <input
+        className="hero-input"
+        type={type}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder={placeholder}
+        style={{ paddingLeft: icon ? 44 : 18, paddingRight: right ? 48 : 18 }}
+      />
+      {right && (
+        <span style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)' }}>
+          {right}
+        </span>
+      )}
+    </div>
+    {error && <p style={{ color: '#fca5a5', fontSize: '0.75rem', marginTop: 6 }}>{error}</p>}
+  </div>
+);
+
+/* ══════════════════════════════════════════════════════════
+   Main Component
+   ══════════════════════════════════════════════════════════ */
 const HeroAuth = () => {
   const navigate = useNavigate();
-  const [isLogin, setIsLogin] = useState(true);
+
+  /* ── Mode: 'welcome' | 'login' | 'register' ─ */
+  const [mode, setMode] = useState<'welcome' | 'login' | 'register'>('welcome');
+  const [step, setStep] = useState(0);      // 0–6 for register wizard
+  const [dir, setDir] = useState(1);      // slide direction
   const [loading, setLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const [showLoginPassword, setShowLoginPassword] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  /* ── Login form ─────────────────────────────────────── */
+  const [loginData, setLoginData] = useState({ email: '', password: '' });
+  const [showLoginPw, setShowLoginPw] = useState(false);
 
-  const [loginData, setLoginData] = useState({
-    email: '',
-    password: '',
-  });
-
+  /* ── Register character ─────────────────────────────── */
   const [char, setChar] = useState({
     username: 'X_PLAYER_1',
     gender: 'male' as 'male' | 'female',
@@ -54,786 +133,645 @@ const HeroAuth = () => {
     clothing: 'tshirt' as ClothingType,
   });
 
-  const [formData, setFormData] = useState({
-    username: '',
-    name: '',
-    surname: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    birthDate: '',
-    skillLevel: '',
-    reason: '',
+  /* ── Register form ──────────────────────────────────── */
+  const [form, setForm] = useState({
+    username: '', name: '', surname: '', email: '',
+    password: '', confirmPassword: '', birthDate: '',
+    skillLevel: '', reason: '',
   });
+  const [showPw, setShowPw] = useState(false);
+  const [showCPw, setShowCPw] = useState(false);
 
-  const COLORS = {
-    hair: ['#b96321', '#212121', '#6d4c41', '#f44336', '#ffffff', '#a855f7', '#fbbf24', '#14b8a6'],
-    skin: ['#ffdbac', '#f1c27d', '#e0ac69', '#c68642', '#8d5524', '#5c3a21'],
-    outfit: ['#22c55e', '#3b82f6', '#a855f7', '#ef4444', '#f97316', '#334155', '#ec4899', '#14b8a6'],
-  };
-
-  const checkTokenExpiration = () => {
-    const token = localStorage.getItem('token');
-    if (!token) return false;
-
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      const exp = payload.exp * 1000;
-      if (Date.now() >= exp) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('email');
-        return false;
-      }
-      return true;
-    } catch (e) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('email');
-      return false;
+  /* ── 3D card tilt ───────────────────────────────────── */
+  const cardRef = useRef<HTMLDivElement>(null);
+  const onMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (!cardRef.current) return;
+    const { left, top, width, height } = cardRef.current.getBoundingClientRect();
+    const x = (e.clientX - left) / width - 0.5;
+    const y = (e.clientY - top) / height - 0.5;
+    cardRef.current.style.transform = `perspective(900px) rotateY(${x * 8}deg) rotateX(${-y * 8}deg)`;
+    const shine = cardRef.current.querySelector('.hero-shine') as HTMLElement;
+    if (shine) {
+      shine.style.setProperty('--mx', `${(x + 0.5) * 100}%`);
+      shine.style.setProperty('--my', `${(y + 0.5) * 100}%`);
     }
-  };
-
-  useEffect(() => {
-    if (checkTokenExpiration()) {
-      console.log('Token hələ keçərlidir');
-    }
-
-    const interval = setInterval(() => {
-      if (!checkTokenExpiration()) {
-        setIsLogin(true);
-        setErrorMessage('Sessiya vaxtı bitdi. Yenidən daxil olun.');
-      }
-    }, 60000);
-
-    return () => clearInterval(interval);
+  }, []);
+  const onMouseLeave = useCallback(() => {
+    if (!cardRef.current) return;
+    cardRef.current.style.transform = 'perspective(900px) rotateY(0deg) rotateX(0deg)';
   }, []);
 
-  const getRandomItem = <T,>(arr: T[]): T => {
-    return arr[Math.floor(Math.random() * arr.length)];
+  /* ── Token check ────────────────────────────────────── */
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        if (Date.now() < payload.exp * 1000) {/* still valid */ }
+        else { localStorage.removeItem('token'); localStorage.removeItem('email'); }
+      } catch { localStorage.removeItem('token'); }
+    }
+  }, []);
+
+  const goStep = (next: number) => {
+    setDir(next > step ? 1 : -1);
+    setStep(next);
+    setErrorMsg(null);
   };
 
-  const handleGenerateWithAI = () => {
-    const randomGender = Math.random() < 0.5 ? 'male' : 'female';
-    const availableClothing = CLOTHING.filter((c) =>
-      randomGender === 'male' ? c.value !== 'dress' : true
-    );
-
+  /* ── AI randomise ───────────────────────────────────── */
+  const randomize = () => {
+    const g = Math.random() < 0.5 ? 'male' : 'female';
+    const clothes = CLOTHING.filter(c => g === 'female' || c.value !== 'dress');
+    const ri = <T,>(a: T[]) => a[Math.floor(Math.random() * a.length)];
     setChar({
       username: `X_PLAYER_${Math.floor(Math.random() * 9000) + 100}`,
-      gender: randomGender,
-      hairColor: getRandomItem(COLORS.hair),
-      skin: getRandomItem(COLORS.skin),
-      clothingColor: getRandomItem(COLORS.outfit),
-      emotion: getRandomItem(EMOTIONS).value,
-      clothing: getRandomItem(availableClothing).value as ClothingType,
+      gender: g,
+      hairColor: ri(HAIR_COLORS),
+      skin: ri(SKIN_TONES),
+      clothingColor: ri(OUTFIT_COLORS),
+      emotion: ri(EMOTIONS).value,
+      clothing: ri(clothes).value as ClothingType,
     });
   };
 
-  const isRegisterFormValid = () => {
-    const birthYear = formData.birthDate ? new Date(formData.birthDate).getFullYear() : 0;
-    const currentYear = new Date().getFullYear();
-    const age = birthYear ? currentYear - birthYear : 0;
-
-    return (
-      char.username.trim().length >= 3 &&
-      formData.username.trim().length >= 3 &&
-      formData.name.trim().length >= 2 &&
-      formData.surname.trim().length >= 2 &&
-      formData.email.includes('@') &&
-      formData.email.includes('.') &&
-      formData.password.length >= 6 &&
-      formData.password === formData.confirmPassword &&
-      formData.birthDate !== '' &&
-      age >= 10 &&
-      age <= 99 &&
-      formData.skillLevel !== '' &&
-      formData.reason !== ''
-    );
+  /* ── Step validators ────────────────────────────────── */
+  const stepValid: Record<number, boolean> = {
+    0: form.name.trim().length >= 2 && form.surname.trim().length >= 2 && form.username.trim().length >= 3,
+    1: form.email.includes('@') && form.email.includes('.') && form.password.length >= 6 && form.password === form.confirmPassword,
+    2: form.birthDate !== '' && form.reason !== '',
+    3: form.skillLevel !== '',
+    4: true,
+    5: true,
   };
 
-  const saveUserToLocal = (userData: any) => {
-    localStorage.setItem('currentUserData', JSON.stringify(userData));
-  };
-
+  /* ── Handle login ───────────────────────────────────── */
   const handleLogin = async () => {
     if (!loginData.email.trim() || !loginData.password.trim()) {
-      setErrorMessage('Email və parol daxil edin');
-      return;
+      setErrorMsg('Email and password are required'); return;
     }
-
-    setLoading(true);
-    setErrorMessage(null);
-
+    setLoading(true); setErrorMsg(null);
     try {
-      const loginRes = await fetch(`${API_BASE}/auth/login`, {
+      const res = await fetch(`${API_BASE}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: loginData.email.trim(),
-          password: loginData.password,
-        }),
+        body: JSON.stringify({ email: loginData.email.trim(), password: loginData.password }),
       });
-
-      if (!loginRes.ok) {
-        const err = await loginRes.json().catch(() => ({}));
-        throw new Error(err.message || 'Giriş uğursuzdur');
-      }
-
-      const loginDataResponse = await loginRes.json();
-      const token = loginDataResponse.accessToken || loginDataResponse.data?.accessToken;
-
-      if (!token) {
-        throw new Error('Token alınmadı');
-      }
-
+      if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.message || 'Login failed'); }
+      const data = await res.json();
+      const token = data.accessToken || data.data?.accessToken;
+      if (!token) throw new Error('No token received');
       localStorage.setItem('token', token);
       localStorage.setItem('email', loginData.email.trim());
-
-      const meRes = await fetch(`${API_BASE}/users/me`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (meRes.ok) {
-        const meJson = await meRes.json();
-        const userData = meJson.data || meJson;
-        saveUserToLocal(userData);
-      } else {
-        console.warn('GET /users/me uğursuz oldu → status:', meRes.status);
-        saveUserToLocal({ email: loginData.email.trim() });
-      }
-
-      alert(`Giriş uğurludur! Xoş gəldin!`);
-      window.location.href = '/profile';
+      const meRes = await fetch(`${API_BASE}/users/me`, { headers: { Authorization: `Bearer ${token}` } });
+      if (meRes.ok) { const mj = await meRes.json(); localStorage.setItem('currentUserData', JSON.stringify(mj.data || mj)); }
+      else { localStorage.setItem('currentUserData', JSON.stringify({ email: loginData.email.trim() })); }
+      window.location.href = '/';
     } catch (err: any) {
-      console.error('Login xətası:', err);
-      setErrorMessage(err.message || 'Xəta baş verdi, yenidən cəhd edin');
-    } finally {
-      setLoading(false);
-    }
+      setErrorMsg(err.message || 'Login failed');
+    } finally { setLoading(false); }
   };
 
+  /* ── Handle register ────────────────────────────────── */
   const handleDeploy = async () => {
     if (loading) return;
-
-    setErrorMessage(null);
-
-    if (!isRegisterFormValid()) {
-      setErrorMessage('Bütün məcburi sahələri düzgün doldurun!');
-      return;
-    }
-
-    setLoading(true);
-
+    setLoading(true); setErrorMsg(null);
     try {
-      const registerPayload = {
-        username: formData.username.trim(),
-        email: formData.email.trim(),
-        password: formData.password,
-        firstName: formData.name.trim(),
-        lastName: formData.surname.trim(),
-        dateOfBirth: new Date(formData.birthDate).toISOString(),
-        skillLevel: formData.skillLevel,
-        reason: formData.reason.trim(),
-      };
-
       const registerRes = await fetch(`${API_BASE}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(registerPayload),
+        body: JSON.stringify({
+          username: form.username.trim(),
+          email: form.email.trim(),
+          password: form.password,
+          firstName: form.name.trim(),
+          lastName: form.surname.trim(),
+          dateOfBirth: new Date(form.birthDate).toISOString(),
+          skillLevel: form.skillLevel,
+          reason: form.reason.trim(),
+        }),
       });
-
-      if (!registerRes.ok) {
-        const errData = await registerRes.json().catch(() => ({}));
-        throw new Error(errData.message || 'Qeydiyyat uğursuz oldu');
-      }
-
-      const registerResponse = await registerRes.json();
-      const token = registerResponse.accessToken || registerResponse.data?.accessToken;
-
-      if (!token) {
-        throw new Error('Access token tapılmadı. Backend cavabını yoxlayın.');
-      }
-
+      if (!registerRes.ok) { const e = await registerRes.json().catch(() => ({})); throw new Error(e.message || 'Registration failed'); }
+      const rData = await registerRes.json();
+      const token = rData.accessToken || rData.data?.accessToken;
+      if (!token) throw new Error('No token received');
       localStorage.setItem('token', token);
-      localStorage.setItem('email', formData.email.trim());
-
-      const characterPayload = {
-        gender: char.gender,
-        emotion: char.emotion,
-        clothing: char.clothing,
-        hairColor: char.hairColor,
-        skin: char.skin,
-        clothingColor: char.clothingColor,
-        username: char.username.trim().toUpperCase(),
-      };
-
-      const updateRes = await fetch(`${API_BASE}/users/character`, {
+      localStorage.setItem('email', form.email.trim());
+      await fetch(`${API_BASE}/users/character`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(characterPayload),
-      });
-
-      if (!updateRes.ok) {
-        const errData = await updateRes.json().catch(() => ({}));
-        console.warn('Character update xətası:', errData.message || 'Personaj yenilənmədi');
-      }
-
-      const userData = {
-        username: formData.username.trim(),
-        firstName: formData.name.trim(),
-        lastName: formData.surname.trim(),
-        email: formData.email.trim(),
-        dateOfBirth: formData.birthDate,
-        skillLevel: formData.skillLevel,
-        reason: formData.reason,
-        character: {
-          ...characterPayload,
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          gender: char.gender, emotion: char.emotion, clothing: char.clothing,
+          hairColor: char.hairColor, skin: char.skin, clothingColor: char.clothingColor,
           username: char.username.trim().toUpperCase(),
-        },
-      };
-
-      saveUserToLocal(userData);
-
-      alert(`UĞURLU! ${char.username.toUpperCase()} yaradıldı və sistemə qoşuldu! 🚀`);
-
-      setFormData({
-        username: '',
-        name: '',
-        surname: '',
-        email: '',
-        password: '',
-        confirmPassword: '',
-        birthDate: '',
-        skillLevel: '',
-        reason: '',
+        }),
       });
-
-      setChar({
-        username: 'X_PLAYER_1',
-        gender: 'male',
-        hairColor: '#b96321',
-        skin: '#ffdbac',
-        clothingColor: '#3b82f6',
-        emotion: 'neutral',
-        clothing: 'tshirt',
-      });
-
-      window.location.href = '/profile';
+      localStorage.setItem('currentUserData', JSON.stringify({
+        username: form.username.trim(), firstName: form.name.trim(), lastName: form.surname.trim(),
+        email: form.email.trim(), skillLevel: form.skillLevel,
+      }));
+      window.location.href = '/';
     } catch (err: any) {
-      console.error('Register xətası:', err);
-      setErrorMessage(err.message || 'Xəta baş verdi, yenidən cəhd edin');
-    } finally {
-      setLoading(false);
-    }
+      setErrorMsg(err.message || 'Registration failed');
+    } finally { setLoading(false); }
   };
 
+  /* ══════════════════════════════════════════════════════
+     RENDER HELPERS
+     ══════════════════════════════════════════════════════ */
+
+  /* Step 0 — Identity */
+  const renderStep0 = () => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <HeroInput label="First Name" value={form.name} onChange={v => setForm({ ...form, name: v })} placeholder="John" icon={<User size={16} />}
+        error={form.name && form.name.trim().length < 2 ? 'Min 2 characters' : undefined} />
+      <HeroInput label="Last Name" value={form.surname} onChange={v => setForm({ ...form, surname: v })} placeholder="Doe" icon={<User size={16} />}
+        error={form.surname && form.surname.trim().length < 2 ? 'Min 2 characters' : undefined} />
+      <HeroInput label="Username" value={form.username} onChange={v => setForm({ ...form, username: v })} placeholder="hero_coder" icon={<Code2 size={16} />}
+        error={form.username && form.username.trim().length < 3 ? 'Min 3 characters' : undefined} />
+    </div>
+  );
+
+  /* Step 1 — Credentials */
+  const renderStep1 = () => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <HeroInput label="Email" type="email" value={form.email} onChange={v => setForm({ ...form, email: v })} placeholder="you@example.com" icon={<Globe size={16} />}
+        error={form.email && !form.email.includes('@') ? 'Invalid email' : undefined} />
+      <HeroInput label="Password" type={showPw ? 'text' : 'password'} value={form.password} onChange={v => setForm({ ...form, password: v })} placeholder="Min 6 characters" icon={<Lock size={16} />}
+        error={form.password && form.password.length < 6 ? 'Min 6 characters' : undefined}
+        right={<button type="button" onClick={() => setShowPw(!showPw)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(240,244,255,0.4)', display: 'flex' }}>{showPw ? <EyeOff size={16} /> : <Eye size={16} />}</button>}
+      />
+      <HeroInput label="Confirm Password" type={showCPw ? 'text' : 'password'} value={form.confirmPassword} onChange={v => setForm({ ...form, confirmPassword: v })} placeholder="Re-enter password" icon={<Lock size={16} />}
+        error={form.confirmPassword && form.password !== form.confirmPassword ? "Passwords don't match" : undefined}
+        right={<button type="button" onClick={() => setShowCPw(!showCPw)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(240,244,255,0.4)', display: 'flex' }}>{showCPw ? <EyeOff size={16} /> : <Eye size={16} />}</button>}
+      />
+    </div>
+  );
+
+  /* Step 2 — Origin */
+  const renderStep2 = () => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      <div>
+        <HeroInput label="Birth Date" type="date" value={form.birthDate} onChange={v => setForm({ ...form, birthDate: v })} icon={<Calendar size={16} />} />
+      </div>
+      <div>
+        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, letterSpacing: '0.08em', color: 'rgba(240,244,255,0.5)', marginBottom: 12, textTransform: 'uppercase', fontFamily: 'var(--hero-mono)' }}>
+          Why are you joining?
+        </label>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          {REASONS.map(r => (
+            <motion.button key={r.value} type="button"
+              onClick={() => setForm({ ...form, reason: r.value })}
+              whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+              className={`hero-char-btn ${form.reason === r.value ? 'active' : ''}`}
+              style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+            >
+              {r.icon} {r.label}
+            </motion.button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  /* Step 3 — Skill Level */
+  const renderStep3 = () => (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+      {SKILL_LEVELS.map(s => (
+        <motion.button key={s.value} type="button"
+          onClick={() => setForm({ ...form, skillLevel: s.value })}
+          whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
+          className={`hero-skill-card ${form.skillLevel === s.value ? 'active' : ''}`}
+        >
+          <div style={{ fontSize: '2.2rem', marginBottom: 8 }}>{s.icon}</div>
+          <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#f0f4ff', marginBottom: 4 }}>{s.label}</div>
+          <div style={{ fontSize: '0.75rem', color: 'rgba(240,244,255,0.45)' }}>{s.desc}</div>
+          {form.skillLevel === s.value && (
+            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}
+              style={{ position: 'absolute', top: 10, right: 10, color: s.color }}>
+              <CheckCircle size={16} />
+            </motion.div>
+          )}
+        </motion.button>
+      ))}
+    </div>
+  );
+
+  /* Step 4 — Character Builder */
+  const renderStep4 = () => (
+    <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
+      {/* Left: controls */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+        {/* Gender */}
+        <div>
+          <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.08em', color: 'rgba(240,244,255,0.45)', marginBottom: 10, textTransform: 'uppercase', fontFamily: 'var(--hero-mono)' }}>Gender</label>
+          <div style={{ display: 'flex', gap: 10 }}>
+            {(['male', 'female'] as const).map(g => (
+              <motion.button key={g} type="button" onClick={() => setChar({ ...char, gender: g })}
+                whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                className={`hero-char-btn ${char.gender === g ? 'active' : ''}`} style={{ flex: 1 }}>
+                {g === 'male' ? '♂️ Male' : '♀️ Female'}
+              </motion.button>
+            ))}
+          </div>
+        </div>
+
+        {/* Display Name */}
+        <HeroInput label="Hero Name" value={char.username}
+          onChange={v => setChar({ ...char, username: v.toUpperCase().slice(0, 12) })}
+          placeholder="X_HERO_1" icon={<Sparkles size={16} />} />
+
+        {/* Emotion */}
+        <div>
+          <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.08em', color: 'rgba(240,244,255,0.45)', marginBottom: 10, textTransform: 'uppercase', fontFamily: 'var(--hero-mono)' }}>Expression</label>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {EMOTIONS.map(e => (
+              <motion.button key={e.value} type="button" onClick={() => setChar({ ...char, emotion: e.value })}
+                whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                className={`hero-char-btn ${char.emotion === e.value ? 'active' : ''}`}
+                style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                {e.emoji} {e.label}
+              </motion.button>
+            ))}
+          </div>
+        </div>
+
+        {/* Clothing */}
+        <div>
+          <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.08em', color: 'rgba(240,244,255,0.45)', marginBottom: 10, textTransform: 'uppercase', fontFamily: 'var(--hero-mono)' }}>Clothing</label>
+          <div style={{ display: 'grid', gridTemplateColumns: char.gender === 'female' ? '1fr 1fr' : 'repeat(3, 1fr)', gap: 8 }}>
+            {CLOTHING.filter(c => char.gender === 'female' || c.value !== 'dress').map(c => (
+              <motion.button key={c.value} type="button" onClick={() => setChar({ ...char, clothing: c.value })}
+                whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                className={`hero-char-btn ${char.clothing === c.value ? 'active' : ''}`}>
+                {c.icon} {c.label}
+              </motion.button>
+            ))}
+          </div>
+        </div>
+
+        {/* Hair color */}
+        <div>
+          <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.08em', color: 'rgba(240,244,255,0.45)', marginBottom: 10, textTransform: 'uppercase', fontFamily: 'var(--hero-mono)' }}>Hair</label>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {HAIR_COLORS.map(c => (
+              <motion.button key={c} type="button" onClick={() => setChar({ ...char, hairColor: c })}
+                whileHover={{ scale: 1.2 }} whileTap={{ scale: 0.9 }}
+                className={`hero-swatch ${char.hairColor === c ? 'active' : ''}`}
+                style={{ backgroundColor: c, borderRadius: '50%' }} />
+            ))}
+          </div>
+        </div>
+
+        {/* Skin tone */}
+        <div>
+          <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.08em', color: 'rgba(240,244,255,0.45)', marginBottom: 10, textTransform: 'uppercase', fontFamily: 'var(--hero-mono)' }}>Skin Tone</label>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {SKIN_TONES.map(c => (
+              <motion.button key={c} type="button" onClick={() => setChar({ ...char, skin: c })}
+                whileHover={{ scale: 1.2 }} whileTap={{ scale: 0.9 }}
+                className={`hero-swatch ${char.skin === c ? 'active' : ''}`}
+                style={{ backgroundColor: c, borderRadius: '50%' }} />
+            ))}
+          </div>
+        </div>
+
+        {/* Outfit color */}
+        <div>
+          <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.08em', color: 'rgba(240,244,255,0.45)', marginBottom: 10, textTransform: 'uppercase', fontFamily: 'var(--hero-mono)' }}>Outfit Color</label>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {OUTFIT_COLORS.map(c => (
+              <motion.button key={c} type="button" onClick={() => setChar({ ...char, clothingColor: c })}
+                whileHover={{ scale: 1.15 }} whileTap={{ scale: 0.9 }}
+                className={`hero-swatch ${char.clothingColor === c ? 'active' : ''}`}
+                style={{ backgroundColor: c }} />
+            ))}
+          </div>
+        </div>
+
+        {/* AI Randomise */}
+        <motion.button type="button" onClick={randomize}
+          whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+          className="hero-btn-primary" style={{ width: '100%', marginTop: 4 }}>
+          <Sparkles size={16} style={{ display: 'inline', marginRight: 8 }} /> Randomize with AI
+        </motion.button>
+      </div>
+
+      {/* Right: preview */}
+      <div style={{ width: 200, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+        <div style={{ width: 200, height: 280, position: 'relative' }}>
+          <PixelCharacter char={char} />
+        </div>
+        <div style={{ background: 'rgba(37,99,235,0.1)', border: '1px solid rgba(37,99,235,0.3)', borderRadius: 10, padding: '6px 14px', fontFamily: 'var(--hero-mono)', fontSize: '0.7rem', color: '#93c5fd', letterSpacing: '0.1em' }}>
+          {char.username}
+        </div>
+      </div>
+    </div>
+  );
+
+  /* Step 5 — Review */
+  const renderStep5 = () => {
+    const skillObj = SKILL_LEVELS.find(s => s.value === form.skillLevel);
+    const reasonObj = REASONS.find(r => r.value === form.reason);
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {[
+          { label: 'Name', value: `${form.name} ${form.surname}` },
+          { label: 'Username', value: `@${form.username}` },
+          { label: 'Email', value: form.email },
+          { label: 'Hero Name', value: char.username },
+          { label: 'Skill', value: skillObj ? `${skillObj.icon} ${skillObj.label}` : '—' },
+          { label: 'Goal', value: reasonObj?.label ?? '—' },
+        ].map(item => (
+          <div key={item.label} className="hero-review-item">
+            <span style={{ minWidth: 90, fontSize: '0.75rem', fontWeight: 600, color: 'rgba(240,244,255,0.4)', fontFamily: 'var(--hero-mono)', textTransform: 'uppercase' }}>{item.label}</span>
+            <span style={{ fontSize: '0.9rem', fontWeight: 600, color: '#f0f4ff' }}>{item.value}</span>
+          </div>
+        ))}
+        {/* Mini character */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: 8 }}>
+          <div style={{ width: 120, height: 160, position: 'relative' }}>
+            <PixelCharacter char={char} />
+          </div>
+        </div>
+        {errorMsg && <div className="hero-error">{errorMsg}</div>}
+      </div>
+    );
+  };
+
+  /* ── Step metadata ──────────────────────────────────── */
+  const STEPS = [
+    { title: 'Who Are You?', sub: 'Tell us your identity', icon: <User size={22} />, render: renderStep0 },
+    { title: 'Secure Your Realm', sub: 'Set up your credentials', icon: <Lock size={22} />, render: renderStep1 },
+    { title: 'Your Origin Story', sub: 'Background & motivation', icon: <Calendar size={22} />, render: renderStep2 },
+    { title: 'Power Level', sub: 'Where are you in your journey?', icon: <Zap size={22} />, render: renderStep3 },
+    { title: 'Forge Your Hero', sub: 'Customize your pixel character', icon: <Palette size={22} />, render: renderStep4 },
+    { title: 'Ready to Deploy?', sub: 'Review your hero and launch', icon: <Rocket size={22} />, render: renderStep5 },
+  ];
+
+  const totalSteps = STEPS.length; // 0..5
+  const progress = mode === 'register' ? ((step + 1) / totalSteps) * 100 : 0;
+
+  /* ════════════════════════════════════════════════════
+     JSX RETURN
+     ════════════════════════════════════════════════════ */
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950 flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Back Button */}
+    <div className="hero-login-page">
+
+      {/* ── Animated grid background ── */}
+      <div className="hero-grid-bg" />
+      <div className="hero-noise" />
+
+      {/* ── Floating hex decorations ── */}
+      {[
+        { x: '8%', y: '10%', size: 180, color: '#2563eb', dur: 7, delay: 0 },
+        { x: '85%', y: '5%', size: 120, color: '#06b6d4', dur: 9, delay: 1.5 },
+        { x: '75%', y: '70%', size: 200, color: '#2563eb', dur: 11, delay: 0.5 },
+        { x: '5%', y: '65%', size: 100, color: '#7c3aed', dur: 8, delay: 2 },
+        { x: '45%', y: '88%', size: 130, color: '#06b6d4', dur: 10, delay: 1 },
+      ].map((h, i) => (
+        <motion.div key={i} className="hero-hex"
+          style={{ left: h.x, top: h.y }}
+          animate={{ y: [0, -20, 0], rotate: [0, 15, 0] }}
+          transition={{ duration: h.dur, repeat: Infinity, delay: h.delay, ease: 'easeInOut' }}>
+          <HexSVG size={h.size} color={h.color} />
+        </motion.div>
+      ))}
+
+      {/* ── Progress bar (register only) ── */}
+      {mode === 'register' && (
+        <div className="hero-progress-track">
+          <div className="hero-progress-fill" style={{ width: `${progress}%` }} />
+        </div>
+      )}
+
+      {/* ── Back button ── */}
       <motion.button
-        onClick={() => navigate('/')}
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.95 }}
-        className="fixed top-6 left-6 z-50 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors text-gray-600 dark:text-slate-300"
-      >
-        <ArrowLeft className="w-5 h-5" />
+        whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}
+        onClick={() => {
+          if (mode === 'welcome') navigate('/');
+          else if (mode === 'login') { setMode('welcome'); setErrorMsg(null); }
+          else if (mode === 'register') {
+            if (step === 0) { setMode('welcome'); setErrorMsg(null); }
+            else goStep(step - 1);
+          }
+        }}
+        style={{
+          position: 'fixed', top: 20, left: 20, zIndex: 200,
+          background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
+          borderRadius: 12, padding: '10px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center',
+          color: 'rgba(240,244,255,0.7)', backdropFilter: 'blur(12px)',
+        }}>
+        <ArrowLeft size={18} />
       </motion.button>
 
-      <AnimatePresence mode="wait">
-        {isLogin ? (
-          <motion.div
-            key="login"
-            initial={{ opacity: 0, scale: 0.92 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.92 }}
-            transition={{ duration: 0.3 }}
-            className="w-full max-w-md relative z-10 p-10 sm:p-12 bg-white dark:bg-slate-900 rounded-2xl shadow-lg dark:shadow-none border border-gray-100 dark:border-slate-800"
-          >
-            <div className="text-center mb-10">
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">
-                HeroCode
-              </h1>
-              <p className="text-gray-500 dark:text-slate-400 text-sm mt-2">Welcome back to the platform</p>
-            </div>
+      {/* ── Main content ── */}
+      <div style={{
+        position: 'relative', zIndex: 10, minHeight: '100vh',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '24px 16px',
+      }}>
+        <AnimatePresence mode="wait" custom={dir}>
 
-            {errorMessage && (
-              <div className="mb-6 p-4 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-xl text-red-700 dark:text-red-300 text-sm font-medium">
-                {errorMessage}
-              </div>
-            )}
+          {/* ══ WELCOME SCREEN ══ */}
+          {mode === 'welcome' && (
+            <motion.div key="welcome"
+              initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -30 }}
+              transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+              style={{ textAlign: 'center', maxWidth: 680, width: '100%' }}>
 
-            <section className="mb-6">
-              <label className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2 block">
-                Email
-              </label>
-              <input
-                type="email"
-                value={loginData.email}
-                onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
-                placeholder="you@example.com"
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all"
-              />
-            </section>
+              {/* Logo badge */}
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.1 }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(37,99,235,0.12)', border: '1px solid rgba(37,99,235,0.3)', borderRadius: 100, padding: '6px 18px', marginBottom: 32 }}>
+                <span style={{ width: 8, height: 8, background: '#22c55e', borderRadius: '50%', boxShadow: '0 0 8px #22c55e', display: 'inline-block' }} />
+                <span style={{ fontFamily: 'var(--hero-mono)', fontSize: '0.75rem', letterSpacing: '0.12em', color: '#93c5fd' }}>HEROCODE PROTOCOL v2.0</span>
+              </motion.div>
 
-            <section className="mb-8">
-              <label className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2 block">
-                Password
-              </label>
-              <div className="relative">
-                <input
-                  type={showLoginPassword ? 'text' : 'password'}
-                  value={loginData.password}
-                  onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
-                  placeholder="••••••••"
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all pr-12"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowLoginPassword(!showLoginPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-400 transition-colors"
-                >
-                  {showLoginPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              <motion.h1 className="hero-headline"
+                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+                style={{ fontSize: 'clamp(3.5rem, 10vw, 7rem)', marginBottom: 24 }}>
+                HERO<br />CODE
+              </motion.h1>
+
+              <motion.p className="hero-subtext"
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }}
+                style={{ marginBottom: 48 }}>
+                The platform where developers become legends.<br />
+                Battle-tested skills. Real projects. Epic community.
+              </motion.p>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}
+                style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
+
+                <motion.button
+                  whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
+                  onClick={() => { setMode('register'); setStep(0); setDir(1); }}
+                  className="hero-btn-primary"
+                  style={{ fontSize: '1.05rem', padding: '18px 48px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <Rocket size={20} /> Enter HeroCode
+                </motion.button>
+
+                <motion.button
+                  whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                  onClick={() => { setMode('login'); setErrorMsg(null); }}
+                  className="hero-btn-ghost"
+                  style={{ fontSize: '0.95rem', padding: '14px 40px' }}>
+                  Already a Hero? Sign In
+                </motion.button>
+              </motion.div>
+
+              {/* Floating stats */}
+              <motion.div
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}
+                style={{ display: 'flex', justifyContent: 'center', gap: 40, marginTop: 60 }}>
+                {[['10K+', 'Heroes'], ['500+', 'Challenges'], ['99%', 'Uptime']].map(([val, lab]) => (
+                  <div key={lab} style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '1.4rem', fontWeight: 800, background: 'linear-gradient(135deg,#fff,#93c5fd)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{val}</div>
+                    <div style={{ fontSize: '0.7rem', color: 'rgba(240,244,255,0.35)', fontFamily: 'var(--hero-mono)', letterSpacing: '0.1em', textTransform: 'uppercase', marginTop: 2 }}>{lab}</div>
+                  </div>
+                ))}
+              </motion.div>
+            </motion.div>
+          )}
+
+          {/* ══ LOGIN SCREEN ══ */}
+          {mode === 'login' && (
+            <motion.div key="login"
+              custom={1}
+              variants={slideVariants}
+              initial="enter" animate="center" exit="exit"
+              transition={transition}
+              style={{ width: '100%', maxWidth: 460 }}>
+              <div className="hero-card hero-tilt" ref={cardRef}
+                onMouseMove={onMouseMove} onMouseLeave={onMouseLeave}
+                style={{ padding: '44px 40px', position: 'relative', overflow: 'hidden' }}>
+                <div className="hero-shine" />
+
+                {/* Header */}
+                <div style={{ marginBottom: 36, textAlign: 'center' }}>
+                  <div style={{ fontSize: '0.75rem', fontFamily: 'var(--hero-mono)', letterSpacing: '0.15em', color: 'rgba(240,244,255,0.4)', marginBottom: 12, textTransform: 'uppercase' }}>
+                    PORTAL ACCESS
+                  </div>
+                  <h2 style={{ fontSize: '2rem', fontWeight: 800, background: 'linear-gradient(135deg,#fff 40%,#93c5fd)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: 6 }}>
+                    Welcome Back
+                  </h2>
+                  <p style={{ color: 'rgba(240,244,255,0.4)', fontSize: '0.9rem' }}>Enter your credentials to continue</p>
+                </div>
+
+                {errorMsg && <div className="hero-error" style={{ marginBottom: 20 }}>{errorMsg}</div>}
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+                  <HeroInput label="Email" type="email" value={loginData.email}
+                    onChange={v => setLoginData({ ...loginData, email: v })}
+                    placeholder="you@example.com" icon={<Globe size={16} />} />
+                  <HeroInput label="Password" type={showLoginPw ? 'text' : 'password'}
+                    value={loginData.password} onChange={v => setLoginData({ ...loginData, password: v })}
+                    placeholder="••••••••" icon={<Lock size={16} />}
+                    right={<button type="button" onClick={() => setShowLoginPw(!showLoginPw)}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(240,244,255,0.4)', display: 'flex' }}>
+                      {showLoginPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>}
+                  />
+                </div>
+
+                <motion.button onClick={handleLogin} disabled={loading}
+                  whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                  className="hero-btn-primary"
+                  style={{ width: '100%', marginTop: 28, fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+                  {loading ? <><Loader2 size={18} className="animate-spin" /> Signing in...</> : <>Sign In <ArrowRight size={18} /></>}
+                </motion.button>
+
+                <button onClick={() => { setMode('register'); setStep(0); setErrorMsg(null); }}
+                  style={{ width: '100%', marginTop: 16, background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(240,244,255,0.4)', fontSize: '0.875rem', fontFamily: 'var(--hero-font)', transition: 'color 0.2s' }}
+                  onMouseEnter={e => (e.currentTarget.style.color = 'rgba(240,244,255,0.8)')}
+                  onMouseLeave={e => (e.currentTarget.style.color = 'rgba(240,244,255,0.4)')}>
+                  Don't have an account? <span style={{ color: '#60a5fa', fontWeight: 600 }}>Create one →</span>
                 </button>
               </div>
-            </section>
+            </motion.div>
+          )}
 
-            <button
-              onClick={handleLogin}
-              disabled={loading}
-              className={`w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-semibold rounded-xl flex items-center justify-center gap-2 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 ${
-                loading ? 'opacity-70 cursor-not-allowed' : ''
-              }`}
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Signing in...
-                </>
-              ) : (
-                'Sign In'
-              )}
-            </button>
+          {/* ══ REGISTER WIZARD ══ */}
+          {mode === 'register' && (
+            <motion.div key={`register-${step}`}
+              custom={dir}
+              variants={slideVariants}
+              initial="enter" animate="center" exit="exit"
+              transition={transition}
+              style={{ width: '100%', maxWidth: step === 4 ? 720 : 520 }}>
+              <div className="hero-card" style={{ padding: '40px 36px', position: 'relative', overflow: 'hidden' }}>
 
-            <button
-              onClick={() => setIsLogin(false)}
-              className="mt-6 w-full text-sm text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200 font-medium transition-colors"
-            >
-              Don't have an account? Create one
-            </button>
-          </motion.div>
-        ) : (
-          <motion.div
-            key="creator"
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -40 }}
-            transition={{ duration: 0.4 }}
-            className="w-full max-w-6xl relative z-10 flex flex-col lg:flex-row gap-8 bg-white dark:bg-slate-900 rounded-2xl shadow-lg dark:shadow-none border border-gray-100 dark:border-slate-800 overflow-hidden"
-          >
-            {/* Character Preview Section */}
-            <div className="w-full lg:w-1/2 p-8 lg:p-12 flex flex-col items-center justify-center bg-gray-50 dark:bg-slate-800 border-b lg:border-b-0 lg:border-r border-gray-100 dark:border-slate-700">
-              <div className="text-center mb-6">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Create Your Character</h3>
-                <p className="text-sm text-gray-500 dark:text-slate-400 mt-2">Preview: {char.username}</p>
-              </div>
-
-              <div className="w-80 h-[480px] relative mb-8">
-                <PixelCharacter char={char} />
-              </div>
-
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={handleGenerateWithAI}
-                disabled={loading}
-                className="w-full max-w-xs px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-semibold rounded-xl flex items-center justify-center gap-2 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50"
-              >
-                <Sparkles className="w-4 h-4" />
-                Generate with AI
-              </motion.button>
-              <p className="text-xs text-gray-500 dark:text-slate-400 mt-3 text-center">
-                Randomize appearance and clothing
-              </p>
-            </div>
-
-            {/* Form Section */}
-            <div className="flex-1 p-8 lg:p-12 overflow-y-auto max-h-[90vh]">
-              {errorMessage && (
-                <div className="mb-6 p-4 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-xl text-red-700 dark:text-red-300 text-sm font-medium">
-                  {errorMessage}
-                </div>
-              )}
-
-              {/* Appearance Section */}
-              <div className="mb-10">
-                <h3 className="text-base font-bold text-gray-900 dark:text-white mb-6">Appearance</h3>
-
-                <div className="space-y-8">
-                  {/* Gender */}
-                  <section>
-                    <label className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-3 block">
-                      Gender
-                    </label>
-                    <div className="flex gap-3">
-                      {(['male', 'female'] as const).map((g) => (
-                        <motion.button
-                          key={g}
-                          onClick={() => setChar({ ...char, gender: g })}
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          className={`flex-1 py-3 px-4 rounded-xl border-2 font-semibold text-sm transition-all duration-300 ${
-                            char.gender === g
-                              ? 'border-blue-500 bg-blue-50 dark:bg-blue-950 text-gray-900 dark:text-white'
-                              : 'border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-400 hover:border-gray-300 dark:hover:border-slate-600'
-                          }`}
-                        >
-                          {g === 'male' ? '♂️ Male' : '♀️ Female'}
-                        </motion.button>
-                      ))}
+                {/* Step label */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
+                  <div>
+                    <p className="hero-step-label" style={{ marginBottom: 6 }}>
+                      Step {step + 1} of {totalSteps}
+                    </p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <span style={{ color: 'rgba(37,99,235,0.9)' }}>{STEPS[step].icon}</span>
+                      <h2 style={{ fontSize: '1.45rem', fontWeight: 800, color: '#f0f4ff' }}>{STEPS[step].title}</h2>
                     </div>
-                  </section>
-
-                  {/* Emotions */}
-                  <section>
-                    <label className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-3 block">
-                      Facial Expression
-                    </label>
-                    <div className="flex flex-wrap gap-2">
-                      {EMOTIONS.map((e) => (
-                        <motion.button
-                          key={e.value}
-                          onClick={() => setChar({ ...char, emotion: e.value })}
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                          className={`px-4 py-2 rounded-lg border-2 text-sm font-medium transition-all duration-300 flex items-center gap-2 ${
-                            char.emotion === e.value
-                              ? 'border-blue-500 bg-blue-50 dark:bg-blue-950 text-gray-900 dark:text-white'
-                              : 'border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-400 hover:border-gray-300'
-                          }`}
-                        >
-                          <span>{e.emoji}</span>
-                          <span>{e.label}</span>
-                        </motion.button>
-                      ))}
-                    </div>
-                  </section>
-
-                  {/* Clothing */}
-                  <section>
-                    <label className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-3 block">
-                      Clothing Style
-                    </label>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                      {CLOTHING.filter((c) => (char.gender === 'male' ? c.value !== 'dress' : true)).map((c) => (
-                        <motion.button
-                          key={c.value}
-                          onClick={() => setChar({ ...char, clothing: c.value })}
-                          whileHover={{ scale: 1.03 }}
-                          whileTap={{ scale: 0.97 }}
-                          className={`py-3 px-3 rounded-lg border-2 text-xs font-semibold transition-all duration-300 ${
-                            char.clothing === c.value
-                              ? 'border-blue-500 bg-blue-50 dark:bg-blue-950 text-gray-900 dark:text-white'
-                              : 'border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-400 hover:border-gray-300'
-                          }`}
-                        >
-                          {c.label}
-                        </motion.button>
-                      ))}
-                    </div>
-                  </section>
-
-                  {/* Color Pickers */}
-                  <div className="space-y-6">
-                    <section>
-                      <label className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-3 block">
-                        Hair Color
-                      </label>
-                      <div className="flex flex-wrap gap-2">
-                        {COLORS.hair.map((c) => (
-                          <motion.button
-                            key={c}
-                            onClick={() => setChar({ ...char, hairColor: c })}
-                            whileHover={{ scale: 1.15 }}
-                            whileTap={{ scale: 0.95 }}
-                            className="w-10 h-10 rounded-lg border-2 transition-all duration-200"
-                            style={{
-                              backgroundColor: c,
-                              borderColor: char.hairColor === c ? '#2563eb' : '#e5e7eb',
-                              boxShadow: char.hairColor === c ? '0 0 12px rgba(37, 99, 235, 0.4)' : 'none',
-                            }}
-                          />
-                        ))}
-                      </div>
-                    </section>
-
-                    <section>
-                      <label className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-3 block">
-                        Skin Tone
-                      </label>
-                      <div className="flex flex-wrap gap-2">
-                        {COLORS.skin.map((c) => (
-                          <motion.button
-                            key={c}
-                            onClick={() => setChar({ ...char, skin: c })}
-                            whileHover={{ scale: 1.15 }}
-                            whileTap={{ scale: 0.95 }}
-                            className="w-10 h-10 rounded-full border-2 transition-all duration-200"
-                            style={{
-                              backgroundColor: c,
-                              borderColor: char.skin === c ? '#2563eb' : '#e5e7eb',
-                              boxShadow: char.skin === c ? '0 0 12px rgba(37, 99, 235, 0.4)' : 'none',
-                            }}
-                          />
-                        ))}
-                      </div>
-                    </section>
-
-                    <section>
-                      <label className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-3 block">
-                        Outfit Color
-                      </label>
-                      <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
-                        {COLORS.outfit.map((c) => (
-                          <motion.button
-                            key={c}
-                            onClick={() => setChar({ ...char, clothingColor: c })}
-                            whileHover={{ scale: 1.08 }}
-                            whileTap={{ scale: 0.95 }}
-                            className="h-10 rounded-lg transition-all duration-200 border-2"
-                            style={{
-                              backgroundColor: c,
-                              borderColor: char.clothingColor === c ? '#ffffff' : 'transparent',
-                              boxShadow: char.clothingColor === c ? '0 0 12px rgba(255,255,255,0.3)' : 'none',
-                            }}
-                          />
-                        ))}
-                      </div>
-                    </section>
+                    <p style={{ color: 'rgba(240,244,255,0.4)', fontSize: '0.85rem', marginTop: 4 }}>{STEPS[step].sub}</p>
+                  </div>
+                  {/* Dot progress */}
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    {STEPS.map((_, i) => (
+                      <div key={i} style={{
+                        width: i === step ? 20 : 8, height: 8, borderRadius: 100,
+                        background: i <= step ? 'linear-gradient(90deg, #2563eb, #06b6d4)' : 'rgba(255,255,255,0.1)',
+                        transition: 'all 0.3s',
+                        boxShadow: i === step ? '0 0 10px rgba(37,99,235,0.6)' : 'none',
+                      }} />
+                    ))}
                   </div>
                 </div>
-              </div>
 
-              {/* Account Section */}
-              <div className="mb-10">
-                <h3 className="text-base font-bold text-gray-900 dark:text-white mb-6">Account Details</h3>
+                {/* Error */}
+                {errorMsg && <div className="hero-error" style={{ marginBottom: 20 }}>{errorMsg}</div>}
 
-                <div className="space-y-4">
-                  <section>
-                    <label className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2 block">
-                      Display Name <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      maxLength={12}
-                      value={char.username}
-                      onChange={(e) => setChar({ ...char, username: e.target.value.toUpperCase() })}
-                      placeholder="PLAYER_NAME"
-                      className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all"
-                    />
-                    {char.username.trim().length < 3 && char.username.trim() && (
-                      <p className="text-red-500 text-xs mt-1">Minimum 3 characters</p>
-                    )}
-                  </section>
-
-                  <section>
-                    <label className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2 block">
-                      Username <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      value={formData.username}
-                      onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                      placeholder="unique_username"
-                      className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all"
-                    />
-                    {formData.username.trim().length < 3 && formData.username.trim() && (
-                      <p className="text-red-500 text-xs mt-1">Minimum 3 characters</p>
-                    )}
-                  </section>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <section>
-                      <label className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2 block">
-                        First Name <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        placeholder="John"
-                        className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all"
-                      />
-                    </section>
-
-                    <section>
-                      <label className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2 block">
-                        Last Name <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        value={formData.surname}
-                        onChange={(e) => setFormData({ ...formData, surname: e.target.value })}
-                        placeholder="Doe"
-                        className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all"
-                      />
-                    </section>
-                  </div>
-
-                  <section>
-                    <label className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2 block">
-                      Email <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      placeholder="you@example.com"
-                      className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all"
-                    />
-                    {formData.email && !formData.email.includes('@') && (
-                      <p className="text-red-500 text-xs mt-1">Please enter a valid email</p>
-                    )}
-                  </section>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <section>
-                      <label className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2 block">
-                        Password <span className="text-red-500">*</span>
-                      </label>
-                      <div className="relative">
-                        <input
-                          type={showPassword ? 'text' : 'password'}
-                          value={formData.password}
-                          onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                          placeholder="••••••••"
-                          className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all pr-10"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-400"
-                        >
-                          {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                        </button>
-                      </div>
-                      {formData.password && formData.password.length < 6 && (
-                        <p className="text-red-500 text-xs mt-1">Minimum 6 characters</p>
-                      )}
-                    </section>
-
-                    <section>
-                      <label className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2 block">
-                        Confirm Password <span className="text-red-500">*</span>
-                      </label>
-                      <div className="relative">
-                        <input
-                          type={showConfirmPassword ? 'text' : 'password'}
-                          value={formData.confirmPassword}
-                          onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                          placeholder="••••••••"
-                          className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all pr-10"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-400"
-                        >
-                          {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                        </button>
-                      </div>
-                      {formData.confirmPassword && formData.password !== formData.confirmPassword && (
-                        <p className="text-red-500 text-xs mt-1">Passwords don't match</p>
-                      )}
-                    </section>
-                  </div>
-
-                  <section>
-                    <label className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2 block">
-                      Birth Date <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="date"
-                      value={formData.birthDate}
-                      onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all"
-                    />
-                  </section>
-
-                  <section>
-                    <label className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-3 block">
-                      Skill Level <span className="text-red-500">*</span>
-                    </label>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                      {SKILL_LEVELS.map((level) => (
-                        <motion.button
-                          key={level.value}
-                          onClick={() => setFormData({ ...formData, skillLevel: level.value })}
-                          whileHover={{ scale: 1.03 }}
-                          whileTap={{ scale: 0.97 }}
-                          className={`py-2 px-3 rounded-lg border-2 text-xs font-semibold transition-all duration-300 ${
-                            formData.skillLevel === level.value
-                              ? 'border-blue-500 bg-blue-50 dark:bg-blue-950 text-gray-900 dark:text-white'
-                              : 'border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-400 hover:border-gray-300'
-                          }`}
-                        >
-                          {level.label}
-                        </motion.button>
-                      ))}
-                    </div>
-                  </section>
-
-                  <section>
-                    <label className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2 block">
-                      Why are you joining? <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      value={formData.reason}
-                      onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all"
-                    >
-                      <option value="" disabled>Select a reason...</option>
-                      <option value="career">Build my career</option>
-                      <option value="freelance">Take freelance work</option>
-                      <option value="startup">Start my own company</option>
-                      <option value="hobby">Learn as a hobby</option>
-                      <option value="gaming">Game development</option>
-                      <option value="other">Other</option>
-                    </select>
-                  </section>
+                {/* Step content */}
+                <div style={{ minHeight: step === 4 ? 'auto' : 280 }}>
+                  {STEPS[step].render()}
                 </div>
-              </div>
 
-              {/* Buttons */}
-              <div className="pt-6 flex flex-col sm:flex-row gap-3 border-t border-gray-100 dark:border-slate-700">
-                <button
-                  onClick={() => setIsLogin(true)}
-                  disabled={loading}
-                  className="flex-1 py-3 px-4 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 font-semibold rounded-xl hover:bg-gray-50 dark:hover:bg-slate-800 transition-all disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-
-                <button
-                  onClick={handleDeploy}
-                  disabled={loading || !isRegisterFormValid()}
-                  className="flex-1 py-3 px-4 bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-semibold rounded-xl flex items-center justify-center gap-2 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Creating...
-                    </>
-                  ) : (
-                    'Create Account'
+                {/* Nav buttons */}
+                <div style={{ display: 'flex', gap: 12, marginTop: 28 }}>
+                  {step > 0 && (
+                    <motion.button type="button" onClick={() => goStep(step - 1)}
+                      whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                      className="hero-btn-ghost" style={{ flex: 1 }}>
+                      <ArrowLeft size={16} style={{ display: 'inline', marginRight: 6 }} /> Back
+                    </motion.button>
                   )}
-                </button>
+                  {step < totalSteps - 1 ? (
+                    <motion.button type="button"
+                      onClick={() => { if (stepValid[step]) goStep(step + 1); }}
+                      disabled={!stepValid[step]}
+                      whileHover={{ scale: stepValid[step] ? 1.02 : 1 }}
+                      whileTap={{ scale: stepValid[step] ? 0.98 : 1 }}
+                      className="hero-btn-primary"
+                      style={{ flex: step > 0 ? 2 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                      Continue <ArrowRight size={16} />
+                    </motion.button>
+                  ) : (
+                    <motion.button type="button" onClick={handleDeploy} disabled={loading}
+                      whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                      className="hero-btn-primary"
+                      style={{ flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontSize: '1rem' }}>
+                      {loading ? <><Loader2 size={18} className="animate-spin" /> Deploying...</> : <><Rocket size={18} /> Launch Hero</>}
+                    </motion.button>
+                  )}
+                </div>
               </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </motion.div>
+          )}
+
+        </AnimatePresence>
+      </div>
     </div>
   );
 };

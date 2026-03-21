@@ -1,68 +1,387 @@
-/* Login Page Styles - Modern Light Theme */
+/* ═══════════════════════════════════════════════════════════
+   HeroCode Login — Dark Web3 / Awwwards Aesthetic
+   ═══════════════════════════════════════════════════════════ */
 
-/* Removed: Old cyber theme styles are no longer used */
-/* All styling is now handled by Tailwind CSS classes in Login.tsx */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap');
 
-/* Optional: Add custom animations or effects if needed */
-.scanline-overlay {
-  display: none;
-  border-color: #52ffa8;
-  text-shadow: 0 0 8px rgba(82, 255, 168, 0.5);
-
+/* ── Root variables ─────────────────────────────────────── */
+:root {
+  --hero-bg: #050508;
+  --hero-grid: rgba(37, 99, 235, 0.12);
+  --hero-accent: #2563eb;
+  --hero-cyan: #06b6d4;
+  --hero-glow: rgba(37, 99, 235, 0.35);
+  --hero-glow-cyan: rgba(6, 182, 212, 0.35);
+  --hero-border: rgba(255, 255, 255, 0.06);
+  --hero-surface: rgba(255, 255, 255, 0.04);
+  --hero-surface-hover: rgba(255, 255, 255, 0.07);
+  --hero-text: #f0f4ff;
+  --hero-muted: rgba(240, 244, 255, 0.45);
+  --hero-font: 'Outfit', sans-serif;
+  --hero-mono: 'JetBrains Mono', monospace;
 }
-/* Yüklənmə (Loading) zamanı düymənin titrəməsi */
-.btn-loading {
+
+/* ── Base page wrapper ──────────────────────────────────── */
+.hero-login-page {
+  font-family: var(--hero-font);
+  min-height: 100vh;
+  background-color: var(--hero-bg);
+  color: var(--hero-text);
+  overflow: hidden;
+  position: relative;
+}
+
+/* ── Animated perspective grid ─────────────────────────── */
+.hero-grid-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
   pointer-events: none;
-  opacity: 0.7;
-  filter: grayscale(0.5);
 }
 
-/* Bouncing Dots (Atılan nöqtələr) rəngi */
-.bg-primary {
-  background-color: #52ffa8 !important;
-  box-shadow: 0 0 5px #52ffa8;
+.hero-grid-bg::before {
+  content: '';
+  position: absolute;
+  inset: -100% -50%;
+  background-image:
+    linear-gradient(var(--hero-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--hero-grid) 1px, transparent 1px);
+  background-size: 60px 60px;
+  transform: perspective(400px) rotateX(55deg);
+  transform-origin: center top;
+  animation: gridScroll 12s linear infinite;
 }
 
-/* --- Global Scrollbar Styles --- */
-
-/* Bütün brauzerlər üçün ümumi (Chrome, Safari, Edge) */
-::-webkit-scrollbar {
-  width: 6px;               /* Scrollbarın eni */
-  height: 6px;              /* Üfüqi scrollbarın hündürlüyü */
+.hero-grid-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(37, 99, 235, 0.15) 0%, transparent 70%);
 }
 
-/* Scrollbarın hərəkət etdiyi yol (Track) */
-::-webkit-scrollbar-track {
-  background: rgba(5, 5, 7, 0.5); /* Arxa fon rəngi */
-  border-left: 1px solid rgba(82, 255, 168, 0.05);
+@keyframes gridScroll {
+  from { transform: perspective(400px) rotateX(55deg) translateY(0); }
+  to   { transform: perspective(400px) rotateX(55deg) translateY(60px); }
 }
 
-/* Sürüşən hissə (Thumb) */
-::-webkit-scrollbar-thumb {
-  background: rgba(82, 255, 168, 0.2); /* Neon rəngin şəffaf forması */
+/* ── Noise overlay ─────────────────────────────────────── */
+.hero-noise {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 128px 128px;
+  opacity: 0.4;
+}
+
+/* ── Floating particles ────────────────────────────────── */
+.hero-particle {
+  position: fixed;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 1;
+  animation: floatParticle var(--dur, 8s) ease-in-out infinite;
+  animation-delay: var(--delay, 0s);
+}
+
+@keyframes floatParticle {
+  0%, 100% { transform: translateY(0) scale(1); opacity: 0.4; }
+  50%       { transform: translateY(-30px) scale(1.2); opacity: 0.8; }
+}
+
+/* ── Progress bar ──────────────────────────────────────── */
+.hero-progress-track {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--hero-border);
+  z-index: 100;
+}
+
+.hero-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--hero-accent), var(--hero-cyan));
+  box-shadow: 0 0 12px var(--hero-glow), 0 0 24px var(--hero-glow-cyan);
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Step counter ──────────────────────────────────────── */
+.hero-step-label {
+  font-family: var(--hero-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  color: var(--hero-muted);
+  text-transform: uppercase;
+}
+
+/* ── Glass card ────────────────────────────────────────── */
+.hero-card {
+  background: rgba(8, 10, 20, 0.75);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--hero-border);
+  border-radius: 20px;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.03) inset,
+    0 32px 64px rgba(0,0,0,0.6),
+    0 0 80px rgba(37, 99, 235, 0.06);
+}
+
+/* ── Glow input ────────────────────────────────────────── */
+.hero-input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 14px 18px;
+  color: var(--hero-text);
+  font-family: var(--hero-font);
+  font-size: 1rem;
+  transition: border-color 0.25s, box-shadow 0.25s, background 0.25s;
+  outline: none;
+}
+
+.hero-input::placeholder {
+  color: rgba(240, 244, 255, 0.25);
+}
+
+.hero-input:focus {
+  border-color: var(--hero-accent);
+  background: rgba(37, 99, 235, 0.06);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15), 0 0 20px rgba(37, 99, 235, 0.1);
+}
+
+/* ── Primary button ────────────────────────────────────── */
+.hero-btn-primary {
+  background: linear-gradient(135deg, var(--hero-accent) 0%, var(--hero-cyan) 100%);
+  color: #fff;
+  font-family: var(--hero-font);
+  font-weight: 700;
+  border: none;
+  border-radius: 14px;
+  padding: 16px 32px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 0 24px var(--hero-glow), 0 4px 16px rgba(0,0,0,0.4);
+}
+
+.hero-btn-primary::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 60%);
+  border-radius: inherit;
+}
+
+.hero-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 40px var(--hero-glow), 0 0 20px var(--hero-glow-cyan), 0 8px 24px rgba(0,0,0,0.5);
+}
+
+.hero-btn-primary:active { transform: translateY(0); }
+.hero-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+/* ── Ghost button ──────────────────────────────────────── */
+.hero-btn-ghost {
+  background: transparent;
+  border: 1px solid var(--hero-border);
+  color: var(--hero-muted);
+  font-family: var(--hero-font);
+  font-weight: 500;
+  border-radius: 14px;
+  padding: 16px 32px;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+
+.hero-btn-ghost:hover {
+  border-color: rgba(255,255,255,0.2);
+  color: var(--hero-text);
+  background: var(--hero-surface-hover);
+}
+
+/* ── Skill card tiles ──────────────────────────────────── */
+.hero-skill-card {
+  background: var(--hero-surface);
+  border: 1px solid var(--hero-border);
+  border-radius: 16px;
+  padding: 20px 16px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-skill-card:hover {
+  background: var(--hero-surface-hover);
+  border-color: rgba(37, 99, 235, 0.4);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 32px rgba(37, 99, 235, 0.2);
+}
+
+.hero-skill-card.active {
+  background: rgba(37, 99, 235, 0.12);
+  border-color: var(--hero-accent);
+  box-shadow: 0 0 0 1px var(--hero-accent), 0 0 32px rgba(37, 99, 235, 0.25);
+}
+
+.hero-skill-card.active::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(37,99,235,0.1) 0%, transparent 60%);
+}
+
+/* ── Color swatch ──────────────────────────────────────── */
+.hero-swatch {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+}
+
+.hero-swatch:hover { transform: scale(1.2); }
+.hero-swatch.active {
+  border-color: #fff;
+  box-shadow: 0 0 12px rgba(255,255,255,0.4);
+  transform: scale(1.15);
+}
+
+/* ── Reason select ─────────────────────────────────────── */
+.hero-select {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 14px 18px;
+  color: var(--hero-text);
+  font-family: var(--hero-font);
+  font-size: 1rem;
+  outline: none;
+  appearance: none;
+  cursor: pointer;
+  transition: border-color 0.25s, box-shadow 0.25s;
+}
+
+.hero-select:focus {
+  border-color: var(--hero-accent);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.hero-select option { background: #0d1117; color: var(--hero-text); }
+
+/* ── Error pill ────────────────────────────────────────── */
+.hero-error {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.3);
   border-radius: 10px;
-  border: 1px solid rgba(82, 255, 168, 0.1);
-  transition: all 0.3s ease;
+  padding: 12px 16px;
+  color: #fca5a5;
+  font-size: 0.875rem;
+  font-weight: 500;
 }
 
-/* Sürüşən hissənin üzərinə gələndə (Hover) */
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(82, 255, 168, 0.5); /* Daha parlaq neon */
-  box-shadow: 0 0 10px rgba(82, 255, 168, 0.3);
+/* ── Floating hex decorations ──────────────────────────── */
+.hero-hex {
+  position: fixed;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.12;
 }
 
-/* Firefox üçün xüsusi (Firefox hələ ki məhdud dəstək verir) */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(82, 255, 168, 0.2) rgba(5, 5, 7, 0.5);
+/* ── Review item ───────────────────────────────────────── */
+.hero-review-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--hero-surface);
+  border: 1px solid var(--hero-border);
+  border-radius: 12px;
+  font-size: 0.9rem;
 }
 
-/* Xüsusi olaraq sənin Creator bölməsindəki scrollbar üçün parıltı effekti */
-.overflow-y-auto::-webkit-scrollbar-thumb {
-  background: linear-gradient(
-    to bottom,
-    transparent,
-    rgba(82, 255, 168, 0.3),
-    transparent
-  );
+/* ── Scrollbar ─────────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(37, 99, 235, 0.3);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover { background: rgba(37, 99, 235, 0.6); }
+* { scrollbar-width: thin; scrollbar-color: rgba(37, 99, 235, 0.3) transparent; }
+
+/* ── 3D tilt wrapper ───────────────────────────────────── */
+.hero-tilt {
+  transition: transform 0.1s ease-out;
+  transform-style: preserve-3d;
+}
+
+/* ── Shine effect on card hover ────────────────────────── */
+.hero-shine {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(255,255,255,0.06) 0%, transparent 60%);
+  transition: opacity 0.2s;
+  opacity: 0;
+}
+
+.hero-card:hover .hero-shine { opacity: 1; }
+
+/* ── Character option buttons ──────────────────────────── */
+.hero-char-btn {
+  background: var(--hero-surface);
+  border: 1px solid var(--hero-border);
+  border-radius: 10px;
+  color: var(--hero-muted);
+  font-family: var(--hero-font);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.hero-char-btn:hover {
+  background: var(--hero-surface-hover);
+  border-color: rgba(37,99,235,0.3);
+  color: var(--hero-text);
+}
+
+.hero-char-btn.active {
+  background: rgba(37,99,235,0.15);
+  border-color: var(--hero-accent);
+  color: #fff;
+  box-shadow: 0 0 16px rgba(37,99,235,0.2);
+}
+
+/* ── Hero headline text ────────────────────────────────── */
+.hero-headline {
+  font-family: var(--hero-font);
+  font-weight: 900;
+  background: linear-gradient(135deg, #fff 20%, rgba(37,99,235,0.8) 60%, #06b6d4 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.hero-subtext {
+  color: var(--hero-muted);
+  font-size: 1.1rem;
+  font-weight: 400;
+  line-height: 1.6;
 }
