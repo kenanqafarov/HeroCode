@@ -71,11 +71,39 @@
     --sidebar-ring: 152 100% 50%;
   }
 
-  /* No light mode - this is a dungeon! */
-  .dark {
-    /* Same as root - always dark */
+  /* Light mode */
+  .light {
+    --background: 0 0% 98%;
+    --foreground: 222 47% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 10%;
+
+    --primary: 152 100% 40%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 199 100% 40%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 222 12% 90%;
+    --muted-foreground: 222 12% 45%;
+
+    --accent: 270 100% 60%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 222 12% 88%;
+    --input: 222 12% 88%;
+    --ring: 152 100% 40%;
   }
 }
+
+@layer base {
 
 @layer base {
   * {
@@ -116,6 +144,7 @@
     font-size: 16px !important;
   }
 
+}
 }
 
 @layer components {

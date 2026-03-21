@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Eye, EyeOff, Sparkles, Loader2 } from 'lucide-react';
-import PixelCharacter, { EmotionType, ClothingType } from '@/components/PixelCharacter';
+import { Eye, EyeOff, Sparkles, Loader2, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import PixelCharacter, { EmotionType, ClothingType } from '../components/PixelCharacter';
 import '@/pages/login.css';
 
-const API_BASE = 'http://localhost:5000/api';
+const API_BASE = (import.meta.env.VITE_API_BASE_URL as string) || 'https://herocodebackend-ym9g.onrender.com/api';
 
 const EMOTIONS: { value: EmotionType; label: string; emoji: string }[] = [
   { value: 'neutral', label: 'Neutral', emoji: '😐' },
@@ -29,6 +30,7 @@ const SKILL_LEVELS = [
 ];
 
 const HeroAuth = () => {
+  const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -200,14 +202,11 @@ const HeroAuth = () => {
         saveUserToLocal(userData);
       } else {
         console.warn('GET /users/me uğursuz oldu → status:', meRes.status);
-        saveUserToLocal({
-          email: loginData.email.trim(),
-        });
+        saveUserToLocal({ email: loginData.email.trim() });
       }
 
       alert(`Giriş uğurludur! Xoş gəldin!`);
       window.location.href = '/profile';
-
     } catch (err: any) {
       console.error('Login xətası:', err);
       setErrorMessage(err.message || 'Xəta baş verdi, yenidən cəhd edin');
@@ -283,7 +282,6 @@ const HeroAuth = () => {
       if (!updateRes.ok) {
         const errData = await updateRes.json().catch(() => ({}));
         console.warn('Character update xətası:', errData.message || 'Personaj yenilənmədi');
-        // davam edirik, amma xəbərdarlıq edirik
       }
 
       const userData = {
@@ -327,7 +325,6 @@ const HeroAuth = () => {
       });
 
       window.location.href = '/profile';
-
     } catch (err: any) {
       console.error('Register xətası:', err);
       setErrorMessage(err.message || 'Xəta baş verdi, yenidən cəhd edin');
@@ -337,21 +334,16 @@ const HeroAuth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
-      <div className="scanline-overlay absolute inset-0 z-0 pointer-events-none" />
-
-      <div className="absolute inset-0 opacity-20 pointer-events-none">
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage: `
-              linear-gradient(hsl(var(--primary) / 0.1) 1px, transparent 1px),
-              linear-gradient(90deg, hsl(var(--primary) / 0.1) 1px, transparent 1px)
-            `,
-            backgroundSize: '50px 50px',
-          }}
-        />
-      </div>
+    <div className="min-h-screen bg-white dark:bg-slate-950 flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Back Button */}
+      <motion.button
+        onClick={() => navigate('/')}
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.95 }}
+        className="fixed top-6 left-6 z-50 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors text-gray-600 dark:text-slate-300"
+      >
+        <ArrowLeft className="w-5 h-5" />
+      </motion.button>
 
       <AnimatePresence mode="wait">
         {isLogin ? (
@@ -361,38 +353,36 @@ const HeroAuth = () => {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.92 }}
             transition={{ duration: 0.3 }}
-            className="w-full max-w-md relative z-10 cyber-card p-10 sm:p-12"
+            className="w-full max-w-md relative z-10 p-10 sm:p-12 bg-white dark:bg-slate-900 rounded-2xl shadow-lg dark:shadow-none border border-gray-100 dark:border-slate-800"
           >
             <div className="text-center mb-10">
-              <h1 className="text-5xl font-black text-foreground italic tracking-tighter font-['Orbitron']">
-                HERO<span className="text-primary">CODE</span>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">
+                HeroCode
               </h1>
-              <p className="text-[10px] text-muted-foreground mt-3 tracking-[0.4em] uppercase">
-                Secure Login Terminal
-              </p>
+              <p className="text-gray-500 dark:text-slate-400 text-sm mt-2">Welcome back to the platform</p>
             </div>
 
             {errorMessage && (
-              <div className="mb-6 p-4 bg-red-950/60 border border-red-600/50 rounded-xl text-red-200 text-sm font-medium">
+              <div className="mb-6 p-4 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-xl text-red-700 dark:text-red-300 text-sm font-medium">
                 {errorMessage}
               </div>
             )}
 
             <section className="mb-6">
-              <label className="text-[10px] text-muted-foreground uppercase font-black mb-2 block tracking-widest">
+              <label className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2 block">
                 Email
               </label>
               <input
                 type="email"
                 value={loginData.email}
                 onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
-                placeholder="user@domain.com"
-                className="cyber-input mb-4"
+                placeholder="you@example.com"
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all"
               />
             </section>
 
             <section className="mb-8">
-              <label className="text-[10px] text-muted-foreground uppercase font-black mb-2 block tracking-widest">
+              <label className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2 block">
                 Password
               </label>
               <div className="relative">
@@ -401,12 +391,12 @@ const HeroAuth = () => {
                   value={loginData.password}
                   onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
                   placeholder="••••••••"
-                  className="cyber-input pr-12"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all pr-12"
                 />
                 <button
                   type="button"
                   onClick={() => setShowLoginPassword(!showLoginPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-400 transition-colors"
                 >
                   {showLoginPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
@@ -416,24 +406,25 @@ const HeroAuth = () => {
             <button
               onClick={handleLogin}
               disabled={loading}
-              className={`cyber-button-primary w-full flex items-center justify-center gap-2 ${loading ? 'opacity-70 cursor-not-allowed' : ''
-                }`}
+              className={`w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-semibold rounded-xl flex items-center justify-center gap-2 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 ${
+                loading ? 'opacity-70 cursor-not-allowed' : ''
+              }`}
             >
               {loading ? (
                 <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Giriş edilir...
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Signing in...
                 </>
               ) : (
-                'Sessiyanı Başlat'
+                'Sign In'
               )}
             </button>
 
             <button
               onClick={() => setIsLogin(false)}
-              className="mt-8 w-full text-[10px] text-muted-foreground hover:text-primary uppercase tracking-[0.2em] transition-all underline underline-offset-8 decoration-border"
+              className="mt-6 w-full text-sm text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200 font-medium transition-colors"
             >
-              Yeni İstifadəçi Yarat
+              Don't have an account? Create one
             </button>
           </motion.div>
         ) : (
@@ -443,125 +434,113 @@ const HeroAuth = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -40 }}
             transition={{ duration: 0.4 }}
-            className="w-full max-w-6xl relative z-10 flex flex-col lg:flex-row cyber-card overflow-hidden"
+            className="w-full max-w-6xl relative z-10 flex flex-col lg:flex-row gap-8 bg-white dark:bg-slate-900 rounded-2xl shadow-lg dark:shadow-none border border-gray-100 dark:border-slate-800 overflow-hidden"
           >
-            <div className="w-full lg:w-1/2 bg-[hsl(var(--terminal-bg))] p-10 lg:p-12 flex flex-col items-center justify-center border-r border-border relative">
-              <div className="absolute top-8 left-10 flex items-center gap-3">
-                <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-                <p className="text-primary text-xs font-black tracking-widest uppercase font-['Orbitron']">
-                  Subyekt: {char.username}
-                </p>
+            {/* Character Preview Section */}
+            <div className="w-full lg:w-1/2 p-8 lg:p-12 flex flex-col items-center justify-center bg-gray-50 dark:bg-slate-800 border-b lg:border-b-0 lg:border-r border-gray-100 dark:border-slate-700">
+              <div className="text-center mb-6">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Create Your Character</h3>
+                <p className="text-sm text-gray-500 dark:text-slate-400 mt-2">Preview: {char.username}</p>
               </div>
 
-              <div className="w-80 h-[480px] relative mt-8">
+              <div className="w-80 h-[480px] relative mb-8">
                 <PixelCharacter char={char} />
               </div>
 
-              <div className="mt-8 w-full max-w-xs group relative">
-                <div className="absolute -inset-0.5 bg-gradient-to-r from-primary via-emerald-400 to-cyan-500 rounded-xl blur opacity-30 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-tilt"></div>
-
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={handleGenerateWithAI}
-                  disabled={loading}
-                  className="relative w-full flex items-center justify-center gap-3 py-4 bg-[#0a0a0c] border border-primary/50 rounded-xl text-primary font-['Orbitron'] text-xs font-black uppercase tracking-[0.2em] overflow-hidden shadow-2xl transition-all"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-
-                  <Sparkles className="w-4 h-4 animate-pulse text-primary" />
-
-                  <span className="relative z-10 drop-shadow-[0_0_8px_rgba(82,255,168,0.8)]">
-                    AI ilə Yarat
-                  </span>
-
-                  <div className="flex gap-1">
-                    <span className="w-1 h-1 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]"></span>
-                    <span className="w-1 h-1 bg-primary rounded-full animate-bounce [animation-delay:-0.15s]"></span>
-                    <span className="w-1 h-1 bg-primary rounded-full animate-bounce"></span>
-                  </div>
-                </motion.button>
-
-                <div className="mt-3 flex flex-col items-center gap-1">
-                  <div className="h-[1px] w-12 bg-gradient-to-r from-transparent via-primary/50 to-transparent"></div>
-                  <p className="text-[9px] text-primary/60 font-medium text-center uppercase tracking-[0.15em] leading-relaxed">
-                    Neural şəbəkə görünüşü və geyimi randomlaşdıracaq
-                  </p>
-                </div>
-              </div>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={handleGenerateWithAI}
+                disabled={loading}
+                className="w-full max-w-xs px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-semibold rounded-xl flex items-center justify-center gap-2 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50"
+              >
+                <Sparkles className="w-4 h-4" />
+                Generate with AI
+              </motion.button>
+              <p className="text-xs text-gray-500 dark:text-slate-400 mt-3 text-center">
+                Randomize appearance and clothing
+              </p>
             </div>
 
-            <div className="flex-1 p-10 lg:p-14 overflow-y-auto max-h-[90vh]">
+            {/* Form Section */}
+            <div className="flex-1 p-8 lg:p-12 overflow-y-auto max-h-[90vh]">
               {errorMessage && (
-                <div className="mb-6 p-4 bg-red-950/60 border border-red-600/50 rounded-xl text-red-200 text-sm font-medium">
+                <div className="mb-6 p-4 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-xl text-red-700 dark:text-red-300 text-sm font-medium">
                   {errorMessage}
                 </div>
               )}
 
-              <div className="mb-12">
-                <h2 style={{ fontSize: '20px' }} className="text-primary text-sm font-black uppercase tracking-widest font-['Orbitron'] mb-8 pb-4 border-b border-border">
-                  ▸ GÖRÜNÜŞ
-                </h2>
+              {/* Appearance Section */}
+              <div className="mb-10">
+                <h3 className="text-base font-bold text-gray-900 dark:text-white mb-6">Appearance</h3>
 
-                <div className="space-y-10">
+                <div className="space-y-8">
+                  {/* Gender */}
                   <section>
-                    <label className="text-[10px] text-muted-foreground uppercase font-black mb-4 block tracking-widest">
-                      Base Model
+                    <label className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-3 block">
+                      Gender
                     </label>
-                    <div className="flex gap-4">
+                    <div className="flex gap-3">
                       {(['male', 'female'] as const).map((g) => (
-                        <button
+                        <motion.button
                           key={g}
                           onClick={() => setChar({ ...char, gender: g })}
-                          className={`flex-1 py-4 rounded-xl border-2 text-xs font-black uppercase transition-all duration-300 ${char.gender === g
-                              ? 'border-primary bg-primary/10 text-foreground shadow-[0_0_25px_hsl(var(--primary)/0.2)]'
-                              : 'border-border text-muted-foreground hover:border-muted-foreground'
-                            }`}
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          className={`flex-1 py-3 px-4 rounded-xl border-2 font-semibold text-sm transition-all duration-300 ${
+                            char.gender === g
+                              ? 'border-blue-500 bg-blue-50 dark:bg-blue-950 text-gray-900 dark:text-white'
+                              : 'border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-400 hover:border-gray-300 dark:hover:border-slate-600'
+                          }`}
                         >
-                          {g.toUpperCase()}_UNIT
-                        </button>
+                          {g === 'male' ? '♂️ Male' : '♀️ Female'}
+                        </motion.button>
                       ))}
                     </div>
                   </section>
 
+                  {/* Emotions */}
                   <section>
-                    <label className="text-[10px] text-muted-foreground uppercase font-black mb-4 block tracking-widest">
+                    <label className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-3 block">
                       Facial Expression
                     </label>
-                    <div className="flex flex-wrap gap-3">
+                    <div className="flex flex-wrap gap-2">
                       {EMOTIONS.map((e) => (
                         <motion.button
                           key={e.value}
                           onClick={() => setChar({ ...char, emotion: e.value })}
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
-                          className={`px-4 py-3 rounded-xl border-2 text-sm transition-all duration-300 flex items-center gap-2 ${char.emotion === e.value
-                              ? 'border-primary bg-primary/10 text-foreground'
-                              : 'border-border text-muted-foreground hover:border-muted-foreground'
-                            }`}
+                          className={`px-4 py-2 rounded-lg border-2 text-sm font-medium transition-all duration-300 flex items-center gap-2 ${
+                            char.emotion === e.value
+                              ? 'border-blue-500 bg-blue-50 dark:bg-blue-950 text-gray-900 dark:text-white'
+                              : 'border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-400 hover:border-gray-300'
+                          }`}
                         >
-                          <span className="text-lg">{e.emoji}</span>
-                          <span className="text-[10px] font-black uppercase">{e.label}</span>
+                          <span>{e.emoji}</span>
+                          <span>{e.label}</span>
                         </motion.button>
                       ))}
                     </div>
                   </section>
 
+                  {/* Clothing */}
                   <section>
-                    <label className="text-[10px] text-muted-foreground uppercase font-black mb-4 block tracking-widest">
+                    <label className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-3 block">
                       Clothing Style
                     </label>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                       {CLOTHING.filter((c) => (char.gender === 'male' ? c.value !== 'dress' : true)).map((c) => (
                         <motion.button
                           key={c.value}
                           onClick={() => setChar({ ...char, clothing: c.value })}
                           whileHover={{ scale: 1.03 }}
                           whileTap={{ scale: 0.97 }}
-                          className={`py-4 rounded-xl border-2 text-xs font-black uppercase transition-all duration-300 ${char.clothing === c.value
-                              ? 'border-primary bg-primary/10 text-foreground'
-                              : 'border-border text-muted-foreground hover:border-muted-foreground'
-                            }`}
+                          className={`py-3 px-3 rounded-lg border-2 text-xs font-semibold transition-all duration-300 ${
+                            char.clothing === c.value
+                              ? 'border-blue-500 bg-blue-50 dark:bg-blue-950 text-gray-900 dark:text-white'
+                              : 'border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-400 hover:border-gray-300'
+                          }`}
                         >
                           {c.label}
                         </motion.button>
@@ -569,23 +548,24 @@ const HeroAuth = () => {
                     </div>
                   </section>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                  {/* Color Pickers */}
+                  <div className="space-y-6">
                     <section>
-                      <label className="text-[10px] text-muted-foreground uppercase font-black mb-4 block tracking-widest">
+                      <label className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-3 block">
                         Hair Color
                       </label>
-                      <div className="flex flex-wrap gap-3">
+                      <div className="flex flex-wrap gap-2">
                         {COLORS.hair.map((c) => (
                           <motion.button
                             key={c}
                             onClick={() => setChar({ ...char, hairColor: c })}
                             whileHover={{ scale: 1.15 }}
                             whileTap={{ scale: 0.95 }}
-                            className="w-11 h-11 rounded-xl border-2 transition-colors duration-200"
+                            className="w-10 h-10 rounded-lg border-2 transition-all duration-200"
                             style={{
                               backgroundColor: c,
-                              borderColor: char.hairColor === c ? 'hsl(var(--primary))' : 'transparent',
-                              boxShadow: char.hairColor === c ? '0 0 15px hsl(var(--primary)/0.4)' : 'none',
+                              borderColor: char.hairColor === c ? '#2563eb' : '#e5e7eb',
+                              boxShadow: char.hairColor === c ? '0 0 12px rgba(37, 99, 235, 0.4)' : 'none',
                             }}
                           />
                         ))}
@@ -593,206 +573,210 @@ const HeroAuth = () => {
                     </section>
 
                     <section>
-                      <label className="text-[10px] text-muted-foreground uppercase font-black mb-4 block tracking-widest">
+                      <label className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-3 block">
                         Skin Tone
                       </label>
-                      <div className="flex flex-wrap gap-3">
+                      <div className="flex flex-wrap gap-2">
                         {COLORS.skin.map((c) => (
                           <motion.button
                             key={c}
                             onClick={() => setChar({ ...char, skin: c })}
                             whileHover={{ scale: 1.15 }}
                             whileTap={{ scale: 0.95 }}
-                            className="w-11 h-11 rounded-full border-2 transition-colors duration-200"
+                            className="w-10 h-10 rounded-full border-2 transition-all duration-200"
                             style={{
                               backgroundColor: c,
-                              borderColor: char.skin === c ? 'hsl(var(--primary))' : 'transparent',
-                              boxShadow: char.skin === c ? '0 0 15px hsl(var(--primary)/0.4)' : 'none',
+                              borderColor: char.skin === c ? '#2563eb' : '#e5e7eb',
+                              boxShadow: char.skin === c ? '0 0 12px rgba(37, 99, 235, 0.4)' : 'none',
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </section>
+
+                    <section>
+                      <label className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-3 block">
+                        Outfit Color
+                      </label>
+                      <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
+                        {COLORS.outfit.map((c) => (
+                          <motion.button
+                            key={c}
+                            onClick={() => setChar({ ...char, clothingColor: c })}
+                            whileHover={{ scale: 1.08 }}
+                            whileTap={{ scale: 0.95 }}
+                            className="h-10 rounded-lg transition-all duration-200 border-2"
+                            style={{
+                              backgroundColor: c,
+                              borderColor: char.clothingColor === c ? '#ffffff' : 'transparent',
+                              boxShadow: char.clothingColor === c ? '0 0 12px rgba(255,255,255,0.3)' : 'none',
                             }}
                           />
                         ))}
                       </div>
                     </section>
                   </div>
-
-                  <section>
-                    <label className="text-[10px] text-muted-foreground uppercase font-black mb-4 block tracking-widest">
-                      Outfit Color
-                    </label>
-                    <div className="grid grid-cols-4 sm:grid-cols-8 gap-3">
-                      {COLORS.outfit.map((c) => (
-                        <motion.button
-                          key={c}
-                          onClick={() => setChar({ ...char, clothingColor: c })}
-                          whileHover={{ scale: 1.08 }}
-                          whileTap={{ scale: 0.95 }}
-                          className="h-14 rounded-xl transition-all duration-200 border-2"
-                          style={{
-                            backgroundColor: c,
-                            borderColor: char.clothingColor === c ? '#ffffff' : 'transparent',
-                            boxShadow: char.clothingColor === c ? '0 0 20px rgba(255,255,255,0.3)' : 'none',
-                          }}
-                        />
-                      ))}
-                    </div>
-                  </section>
                 </div>
               </div>
 
-              <div className="mb-8">
-                <h2 style={{ fontSize: '20px' }} className="text-primary text-sm font-black uppercase tracking-widest font-['Orbitron'] mb-8 pb-4 border-b border-border">
-                  ▸ Başlıq Mətni
-                </h2>
+              {/* Account Section */}
+              <div className="mb-10">
+                <h3 className="text-base font-bold text-gray-900 dark:text-white mb-6">Account Details</h3>
 
-                <div className="space-y-6">
+                <div className="space-y-4">
                   <section>
-                    <label className="text-[10px] text-muted-foreground uppercase font-black mb-2 block tracking-widest">
+                    <label className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2 block">
                       Display Name <span className="text-red-500">*</span>
                     </label>
                     <input
                       maxLength={12}
                       value={char.username}
                       onChange={(e) => setChar({ ...char, username: e.target.value.toUpperCase() })}
-                      className="cyber-input"
-                      placeholder="DISPLAY NAME..."
+                      placeholder="PLAYER_NAME"
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all"
                     />
                     {char.username.trim().length < 3 && char.username.trim() && (
-                      <p className="text-red-500 text-[10px] mt-1 uppercase">Ən azı 3 simvol olmalıdır</p>
+                      <p className="text-red-500 text-xs mt-1">Minimum 3 characters</p>
                     )}
                   </section>
 
                   <section>
-                    <label className="text-[10px] text-muted-foreground uppercase font-black mb-2 block tracking-widest">
+                    <label className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2 block">
                       Username <span className="text-red-500">*</span>
                     </label>
                     <input
                       value={formData.username}
                       onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                      className="cyber-input"
                       placeholder="unique_username"
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all"
                     />
                     {formData.username.trim().length < 3 && formData.username.trim() && (
-                      <p className="text-red-500 text-[10px] mt-1 uppercase">Ən azı 3 simvol olmalıdır</p>
+                      <p className="text-red-500 text-xs mt-1">Minimum 3 characters</p>
                     )}
                   </section>
 
-                  <section>
-                    <label className="text-[10px] text-muted-foreground uppercase font-black mb-2 block tracking-widest">
-                      Ad <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="cyber-input"
-                      placeholder="Adınız"
-                    />
-                  </section>
+                  <div className="grid grid-cols-2 gap-4">
+                    <section>
+                      <label className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2 block">
+                        First Name <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        placeholder="John"
+                        className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all"
+                      />
+                    </section>
+
+                    <section>
+                      <label className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2 block">
+                        Last Name <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        value={formData.surname}
+                        onChange={(e) => setFormData({ ...formData, surname: e.target.value })}
+                        placeholder="Doe"
+                        className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all"
+                      />
+                    </section>
+                  </div>
 
                   <section>
-                    <label className="text-[10px] text-muted-foreground uppercase font-black mb-2 block tracking-widest">
-                      Soyad <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      value={formData.surname}
-                      onChange={(e) => setFormData({ ...formData, surname: e.target.value })}
-                      className="cyber-input"
-                      placeholder="Soyadınız"
-                    />
-                  </section>
-
-                  <section>
-                    <label className="text-[10px] text-muted-foreground uppercase font-black mb-2 block tracking-widest">
+                    <label className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2 block">
                       Email <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="email"
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="cyber-input"
-                      placeholder="email@domain.com"
+                      placeholder="you@example.com"
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all"
                     />
                     {formData.email && !formData.email.includes('@') && (
-                      <p className="text-red-500 text-[10px] mt-1 uppercase">Düzgün email daxil edin</p>
+                      <p className="text-red-500 text-xs mt-1">Please enter a valid email</p>
                     )}
                   </section>
 
-                  <section>
-                    <label className="text-[10px] text-muted-foreground uppercase font-black mb-2 block tracking-widest">
-                      Parol <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showPassword ? 'text' : 'password'}
-                        value={formData.password}
-                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                        className="cyber-input pr-12"
-                        placeholder="••••••••"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors"
-                      >
-                        {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                      </button>
-                    </div>
-                    {formData.password && formData.password.length < 6 && (
-                      <p className="text-red-500 text-[10px] mt-1 uppercase">Ən azı 6 simvol olmalıdır</p>
-                    )}
-                  </section>
+                  <div className="grid grid-cols-2 gap-4">
+                    <section>
+                      <label className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2 block">
+                        Password <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showPassword ? 'text' : 'password'}
+                          value={formData.password}
+                          onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                          placeholder="••••••••"
+                          className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all pr-10"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-400"
+                        >
+                          {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                      </div>
+                      {formData.password && formData.password.length < 6 && (
+                        <p className="text-red-500 text-xs mt-1">Minimum 6 characters</p>
+                      )}
+                    </section>
+
+                    <section>
+                      <label className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2 block">
+                        Confirm Password <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showConfirmPassword ? 'text' : 'password'}
+                          value={formData.confirmPassword}
+                          onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                          placeholder="••••••••"
+                          className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all pr-10"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-400"
+                        >
+                          {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                      </div>
+                      {formData.confirmPassword && formData.password !== formData.confirmPassword && (
+                        <p className="text-red-500 text-xs mt-1">Passwords don't match</p>
+                      )}
+                    </section>
+                  </div>
 
                   <section>
-                    <label className="text-[10px] text-muted-foreground uppercase font-black mb-2 block tracking-widest">
-                      Parolu təsdiqlə <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showConfirmPassword ? 'text' : 'password'}
-                        value={formData.confirmPassword}
-                        onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                        className="cyber-input pr-12"
-                        placeholder="••••••••"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors"
-                      >
-                        {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                      </button>
-                    </div>
-                    {formData.confirmPassword && formData.password !== formData.confirmPassword && (
-                      <p className="text-red-500 text-[10px] mt-1 uppercase">Parollar uyğun gəlmir</p>
-                    )}
-                  </section>
-
-                  <section>
-                    <label className="text-[10px] text-muted-foreground uppercase font-black mb-2 block tracking-widest">
-                      Doğum tarixi <span className="text-red-500">*</span>
+                    <label className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2 block">
+                      Birth Date <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="date"
                       value={formData.birthDate}
                       onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
-                      className="cyber-input"
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all"
                     />
                   </section>
 
                   <section>
-                    <label className="text-[10px] text-muted-foreground uppercase font-black mb-4 block tracking-widest">
-                      Bacarıq səviyyəsi <span className="text-red-500">*</span>
+                    <label className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-3 block">
+                      Skill Level <span className="text-red-500">*</span>
                     </label>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                       {SKILL_LEVELS.map((level) => (
                         <motion.button
                           key={level.value}
                           onClick={() => setFormData({ ...formData, skillLevel: level.value })}
                           whileHover={{ scale: 1.03 }}
                           whileTap={{ scale: 0.97 }}
-                          className={`py-4 rounded-xl border-2 text-xs font-black uppercase transition-all duration-300 ${formData.skillLevel === level.value
-                              ? 'border-primary bg-primary/10 text-foreground'
-                              : 'border-border text-muted-foreground hover:border-muted-foreground'
-                            }`}
+                          className={`py-2 px-3 rounded-lg border-2 text-xs font-semibold transition-all duration-300 ${
+                            formData.skillLevel === level.value
+                              ? 'border-blue-500 bg-blue-50 dark:bg-blue-950 text-gray-900 dark:text-white'
+                              : 'border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-400 hover:border-gray-300'
+                          }`}
                         >
                           {level.label}
                         </motion.button>
@@ -801,59 +785,48 @@ const HeroAuth = () => {
                   </section>
 
                   <section>
-                    <label className="text-[10px] text-muted-foreground uppercase font-black mb-2 block tracking-widest">
-                      Məqsəd / Səbəb <span className="text-red-500">*</span>
+                    <label className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2 block">
+                      Why are you joining? <span className="text-red-500">*</span>
                     </label>
                     <select
                       value={formData.reason}
                       onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
-                      className="cyber-input appearance-none cursor-pointer w-full"
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all"
                     >
-                      <option value="" disabled>Seçin...</option>
-                      <option value="career">Karyera qurmaq</option>
-                      <option value="freelance">Frilans işlər</option>
-                      <option value="startup">Öz startapımı qurmaq</option>
-                      <option value="hobby">Hobbi kimi öyrənmək</option>
-                      <option value="gaming">Oyun inkişaf etdirmək</option>
-                      <option value="other">Digər</option>
+                      <option value="" disabled>Select a reason...</option>
+                      <option value="career">Build my career</option>
+                      <option value="freelance">Take freelance work</option>
+                      <option value="startup">Start my own company</option>
+                      <option value="hobby">Learn as a hobby</option>
+                      <option value="gaming">Game development</option>
+                      <option value="other">Other</option>
                     </select>
                   </section>
-
-                  <div className="bg-primary/5 border border-primary/20 p-6 rounded-2xl mt-8">
-                    <h4 className="text-primary text-xs font-black mb-3 uppercase tracking-widest font-['Orbitron']">
-                      Sistem Statusu
-                    </h4>
-                    <p className="text-[10px] text-muted-foreground leading-relaxed uppercase">
-                      {isRegisterFormValid()
-                        ? 'Bütün məlumatlar tamam → Deploy oluna bilər'
-                        : 'Bəzi məcburi sahələr boş və ya səhvdir'}
-                    </p>
-                  </div>
                 </div>
               </div>
 
-              <div className="pt-8 flex flex-col sm:flex-row gap-5 border-t border-border">
+              {/* Buttons */}
+              <div className="pt-6 flex flex-col sm:flex-row gap-3 border-t border-gray-100 dark:border-slate-700">
                 <button
                   onClick={() => setIsLogin(true)}
                   disabled={loading}
-                  className="cyber-button-ghost sm:w-auto w-full"
+                  className="flex-1 py-3 px-4 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 font-semibold rounded-xl hover:bg-gray-50 dark:hover:bg-slate-800 transition-all disabled:opacity-50"
                 >
-                  Ləğv et
+                  Cancel
                 </button>
 
                 <button
                   onClick={handleDeploy}
                   disabled={loading || !isRegisterFormValid()}
-                  className={`flex-1 flex items-center justify-center gap-2 cyber-button-primary ${loading || !isRegisterFormValid() ? 'opacity-50 cursor-not-allowed' : ''
-                    }`}
+                  className="flex-1 py-3 px-4 bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-semibold rounded-xl flex items-center justify-center gap-2 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? (
                     <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      Deploy olunur...
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Creating...
                     </>
                   ) : (
-                    'Deploy Et və Sistemə Qoşul'
+                    'Create Account'
                   )}
                 </button>
               </div>

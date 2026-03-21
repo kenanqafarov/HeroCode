@@ -19,7 +19,7 @@ export default defineConfig({
     open: true,
     proxy: {
       '/api': {
-        target: 'https://renderdeployback.onrender.com',
+        target: 'https://herocodebackend-ym9g.onrender.com',
         changeOrigin: true,
         secure: false,
       },

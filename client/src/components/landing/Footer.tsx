@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Github, Twitter, Linkedin, Mail, Send, Code2 } from "lucide-react";
 import emailjs from '@emailjs/browser';
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
 
 const Footer = () => {
   const [email, setEmail] = useState("");

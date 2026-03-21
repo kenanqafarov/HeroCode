@@ -7,6 +7,7 @@ import authRoutes from './routes/auth.routes';
 import userRoutes from './routes/user.routes';
 import matchmakingRoutes from './routes/matchmaking.routes';
 import adminRoutes from './routes/admin.routes';
+import blogRoutes from './routes/blog.routes';
 import { matchmakingSocket } from './sockets/matchmaking.socket';
 import { protect } from './middleware/auth.middleware';
 import jwt from 'jsonwebtoken';
@@ -15,13 +16,34 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: ['http://localhost:5173', 'http://localhost:3000', '*'],
+    origin: [
+      'http://localhost:5173',
+      'http://localhost:3000',
+      'https://herocodeai.vercel.app',
+      'https://herocode-h4m0mctc1-knanqafaros-projects.vercel.app'
+    ],
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true
   }
 });
 
-app.use(cors({ origin: true, credentials: true }));
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'https://herocodeai.vercel.app',
+  'https://herocode-h4m0mctc1-knanqafaros-projects.vercel.app'
+];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+}));
 app.use(express.json());
 
 // Routes
@@ -29,6 +51,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', protect, userRoutes);
 app.use('/api/matchmaking', protect, matchmakingRoutes);
 app.use('/api/admin', protect, adminRoutes);
+app.use('/api/blogs', blogRoutes);
 
 // Socket.IO middleware (token yoxlama)
 io.use((socket, next) => {
