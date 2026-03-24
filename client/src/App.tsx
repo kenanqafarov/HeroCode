@@ -11,6 +11,7 @@ import ProfilePage from "./pages/Profile";
 import AdminPanel from "./pages/Admin";
 import LiveMatch from "./pages/LiveMatch";
 import LiveGame from "./pages/LiveGame";
+import BlogDetails from "./pages/BlogDetails";
 
 const queryClient = new QueryClient();
 
@@ -50,6 +51,7 @@ const App = () => (
             <Route path="/admin" element={<AdminPanel />} />
             <Route path="/live-match" element={<LiveMatch />} />
             <Route path="/live-match/game/:matchId" element={<LiveGame />} />
+            <Route path="/blog/:id" element={<BlogDetails />} />
 
 
             <Route path="*" element={<NotFound />} />

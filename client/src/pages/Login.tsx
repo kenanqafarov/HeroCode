@@ -550,19 +550,19 @@ const HeroAuth = () => {
       {/* ── Floating hex decorations ── */}
       <motion.div style={{ x: bgX, y: bgY, position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 1 }}>
         {[
-        { x: '8%', y: '10%', size: 180, color: '#2563eb', dur: 7, delay: 0 },
-        { x: '85%', y: '5%', size: 120, color: '#06b6d4', dur: 9, delay: 1.5 },
-        { x: '75%', y: '70%', size: 200, color: '#2563eb', dur: 11, delay: 0.5 },
-        { x: '5%', y: '65%', size: 100, color: '#7c3aed', dur: 8, delay: 2 },
-        { x: '45%', y: '88%', size: 130, color: '#06b6d4', dur: 10, delay: 1 },
-      ].map((h, i) => (
-        <motion.div key={i} className="hero-hex"
-          style={{ left: h.x, top: h.y }}
-          animate={{ y: [0, -20, 0], rotate: [0, 15, 0] }}
-          transition={{ duration: h.dur, repeat: Infinity, delay: h.delay, ease: 'easeInOut' }}>
-          <HexSVG size={h.size} color={h.color} />
-        </motion.div>
-      ))}
+          { x: '8%', y: '10%', size: 180, color: '#2563eb', dur: 7, delay: 0 },
+          { x: '85%', y: '5%', size: 120, color: '#06b6d4', dur: 9, delay: 1.5 },
+          { x: '75%', y: '70%', size: 200, color: '#2563eb', dur: 11, delay: 0.5 },
+          { x: '5%', y: '65%', size: 100, color: '#7c3aed', dur: 8, delay: 2 },
+          { x: '45%', y: '88%', size: 130, color: '#06b6d4', dur: 10, delay: 1 },
+        ].map((h, i) => (
+          <motion.div key={i} className="hero-hex"
+            style={{ left: h.x, top: h.y }}
+            animate={{ y: [0, -20, 0], rotate: [0, 15, 0] }}
+            transition={{ duration: h.dur, repeat: Infinity, delay: h.delay, ease: 'easeInOut' }}>
+            <HexSVG size={h.size} color={h.color} />
+          </motion.div>
+        ))}
       </motion.div>
 
       {/* ── Progress bar (register only) ── */}
@@ -605,201 +605,201 @@ const HeroAuth = () => {
         }}>
           <AnimatePresence mode="wait" custom={dir}>
 
-          {/* ══ WELCOME SCREEN ══ */}
-          {mode === 'welcome' && (
-            <motion.div key="welcome"
-              initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -30 }}
-              transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-              style={{ textAlign: 'center', maxWidth: 680, width: '100%' }}>
+            {/* ══ WELCOME SCREEN ══ */}
+            {mode === 'welcome' && (
+              <motion.div key="welcome"
+                initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -30 }}
+                transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+                style={{ textAlign: 'center', maxWidth: 680, width: '100%' }}>
 
-              {/* Logo badge */}
-              <motion.div
-                initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 0.1 }}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(37,99,235,0.12)', border: '1px solid rgba(37,99,235,0.3)', borderRadius: 100, padding: '6px 18px', marginBottom: 32 }}>
-                <span style={{ width: 8, height: 8, background: '#22c55e', borderRadius: '50%', boxShadow: '0 0 8px #22c55e', display: 'inline-block' }} />
-                <span style={{ fontFamily: 'var(--hero-mono)', fontSize: '0.75rem', letterSpacing: '0.12em', color: '#93c5fd' }}>HEROCODE PROTOCOL v2.0</span>
-              </motion.div>
+                {/* Logo badge */}
+                <motion.div
+                  initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 0.1 }}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(37,99,235,0.12)', border: '1px solid rgba(37,99,235,0.3)', borderRadius: 100, padding: '6px 18px', marginBottom: 32 }}>
+                  <span style={{ width: 8, height: 8, background: '#22c55e', borderRadius: '50%', boxShadow: '0 0 8px #22c55e', display: 'inline-block' }} />
+                  <span style={{ fontFamily: 'var(--hero-mono)', fontSize: '0.75rem', letterSpacing: '0.12em', color: '#93c5fd' }}>HEROCODE PROTOCOL v2.0</span>
+                </motion.div>
 
-              <motion.h1 className="hero-headline"
-                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-                style={{ fontSize: 'clamp(3.5rem, 10vw, 7rem)', marginBottom: 24 }}>
-                HERO<br />CODE
-              </motion.h1>
+                <motion.h1 className="hero-headline"
+                  initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+                  style={{ fontSize: 'clamp(3.5rem, 10vw, 7rem)', marginBottom: 24 }}>
+                  HERO<br />CODE
+                </motion.h1>
 
-              <motion.p className="hero-subtext"
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }}
-                style={{ marginBottom: 48 }}>
-                The platform where developers become legends.<br />
-                Battle-tested skills. Real projects. Epic community.
-              </motion.p>
+                <motion.p className="hero-subtext"
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }}
+                  style={{ marginBottom: 48 }}>
+                  The platform where developers become legends.<br />
+                  Battle-tested skills. Real projects. Epic community.
+                </motion.p>
 
-              <motion.div
-                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}
-                style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}
+                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
 
-                <motion.button
-                  whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
-                  onClick={() => { setMode('register'); setStep(0); setDir(1); }}
-                  className="hero-btn-primary"
-                  style={{ fontSize: '1.05rem', padding: '18px 48px', display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <Rocket size={20} /> Enter HeroCode
-                </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
+                    onClick={() => { setMode('register'); setStep(0); setDir(1); }}
+                    className="hero-btn-primary"
+                    style={{ fontSize: '1.05rem', padding: '18px 48px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <Rocket size={20} /> Enter HeroCode
+                  </motion.button>
 
-                <motion.button
-                  whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                  onClick={() => { setMode('login'); setErrorMsg(null); }}
-                  className="hero-btn-ghost"
-                  style={{ fontSize: '0.95rem', padding: '14px 40px' }}>
-                  Already a Hero? Sign In
-                </motion.button>
-              </motion.div>
+                  <motion.button
+                    whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                    onClick={() => { setMode('login'); setErrorMsg(null); }}
+                    className="hero-btn-ghost"
+                    style={{ fontSize: '0.95rem', padding: '14px 40px' }}>
+                    Already a Hero? Sign In
+                  </motion.button>
+                </motion.div>
 
-              {/* Floating stats */}
-              <motion.div
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}
-                style={{ display: 'flex', justifyContent: 'center', gap: 40, marginTop: 60 }}>
-                {[['10K+', 'Heroes'], ['500+', 'Challenges'], ['99%', 'Uptime']].map(([val, lab]) => (
-                  <div key={lab} style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: '1.4rem', fontWeight: 800, background: 'linear-gradient(135deg,#fff,#93c5fd)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{val}</div>
-                    <div style={{ fontSize: '0.7rem', color: 'rgba(240,244,255,0.35)', fontFamily: 'var(--hero-mono)', letterSpacing: '0.1em', textTransform: 'uppercase', marginTop: 2 }}>{lab}</div>
-                  </div>
-                ))}
-              </motion.div>
-            </motion.div>
-          )}
-
-          {/* ══ LOGIN SCREEN ══ */}
-          {mode === 'login' && (
-            <motion.div key="login"
-              custom={1}
-              variants={slideVariants}
-              initial="enter" animate="center" exit="exit"
-              transition={transition}
-              style={{ width: '100%', maxWidth: 460 }}>
-              <div className="hero-card hero-tilt" ref={cardRef}
-                onMouseMove={onMouseMove} onMouseLeave={onMouseLeave}
-                style={{ padding: '44px 40px', position: 'relative', overflow: 'hidden' }}>
-                <div className="hero-shine" />
-
-                {/* Header */}
-                <div style={{ marginBottom: 36, textAlign: 'center' }}>
-                  <div style={{ fontSize: '0.75rem', fontFamily: 'var(--hero-mono)', letterSpacing: '0.15em', color: 'rgba(240,244,255,0.4)', marginBottom: 12, textTransform: 'uppercase' }}>
-                    PORTAL ACCESS
-                  </div>
-                  <h2 style={{ fontSize: '2rem', fontWeight: 800, background: 'linear-gradient(135deg,#fff 40%,#93c5fd)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: 6 }}>
-                    Welcome Back
-                  </h2>
-                  <p style={{ color: 'rgba(240,244,255,0.4)', fontSize: '0.9rem' }}>Enter your credentials to continue</p>
-                </div>
-
-                {errorMsg && <div className="hero-error" style={{ marginBottom: 20 }}>{errorMsg}</div>}
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-                  <HeroInput label="Email" type="email" value={loginData.email}
-                    onChange={v => setLoginData({ ...loginData, email: v })}
-                    placeholder="you@example.com" icon={<Globe size={16} />} />
-                  <HeroInput label="Password" type={showLoginPw ? 'text' : 'password'}
-                    value={loginData.password} onChange={v => setLoginData({ ...loginData, password: v })}
-                    placeholder="••••••••" icon={<Lock size={16} />}
-                    right={<button type="button" onClick={() => setShowLoginPw(!showLoginPw)}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(240,244,255,0.4)', display: 'flex' }}>
-                      {showLoginPw ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>}
-                  />
-                </div>
-
-                <motion.button onClick={handleLogin} disabled={loading}
-                  whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                  className="hero-btn-primary"
-                  style={{ width: '100%', marginTop: 28, fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
-                  {loading ? <><Loader2 size={18} className="animate-spin" /> Signing in...</> : <>Sign In <ArrowRight size={18} /></>}
-                </motion.button>
-
-                <button onClick={() => { setMode('register'); setStep(0); setErrorMsg(null); }}
-                  style={{ width: '100%', marginTop: 16, background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(240,244,255,0.4)', fontSize: '0.875rem', fontFamily: 'var(--hero-font)', transition: 'color 0.2s' }}
-                  onMouseEnter={e => (e.currentTarget.style.color = 'rgba(240,244,255,0.8)')}
-                  onMouseLeave={e => (e.currentTarget.style.color = 'rgba(240,244,255,0.4)')}>
-                  Don't have an account? <span style={{ color: '#60a5fa', fontWeight: 600 }}>Create one →</span>
-                </button>
-              </div>
-            </motion.div>
-          )}
-
-          {/* ══ REGISTER WIZARD ══ */}
-          {mode === 'register' && (
-            <motion.div key={`register-${step}`}
-              custom={dir}
-              variants={slideVariants}
-              initial="enter" animate="center" exit="exit"
-              transition={transition}
-              style={{ width: '100%', maxWidth: step === 4 ? 720 : 520 }}>
-              <div className="hero-card" style={{ padding: '40px 36px', position: 'relative', overflow: 'hidden' }}>
-
-                {/* Step label */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
-                  <div>
-                    <p className="hero-step-label" style={{ marginBottom: 6 }}>
-                      Step {step + 1} of {totalSteps}
-                    </p>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span style={{ color: 'rgba(37,99,235,0.9)' }}>{STEPS[step].icon}</span>
-                      <h2 style={{ fontSize: '1.45rem', fontWeight: 800, color: '#f0f4ff' }}>{STEPS[step].title}</h2>
+                {/* Floating stats */}
+                <motion.div
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}
+                  style={{ display: 'flex', justifyContent: 'center', gap: 40, marginTop: 60 }}>
+                  {[['10K+', 'Heroes'], ['500+', 'Challenges'], ['99%', 'Uptime']].map(([val, lab]) => (
+                    <div key={lab} style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: '1.4rem', fontWeight: 800, background: 'linear-gradient(135deg,#fff,#93c5fd)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{val}</div>
+                      <div style={{ fontSize: '0.7rem', color: 'rgba(240,244,255,0.35)', fontFamily: 'var(--hero-mono)', letterSpacing: '0.1em', textTransform: 'uppercase', marginTop: 2 }}>{lab}</div>
                     </div>
-                    <p style={{ color: 'rgba(240,244,255,0.4)', fontSize: '0.85rem', marginTop: 4 }}>{STEPS[step].sub}</p>
+                  ))}
+                </motion.div>
+              </motion.div>
+            )}
+
+            {/* ══ LOGIN SCREEN ══ */}
+            {mode === 'login' && (
+              <motion.div key="login"
+                custom={1}
+                variants={slideVariants}
+                initial="enter" animate="center" exit="exit"
+                transition={transition}
+                style={{ width: '100%', maxWidth: 460 }}>
+                <div className="hero-card hero-tilt" ref={cardRef}
+                  onMouseMove={onMouseMove} onMouseLeave={onMouseLeave}
+                  style={{ padding: '44px 40px', position: 'relative', overflow: 'hidden' }}>
+                  <div className="hero-shine" />
+
+                  {/* Header */}
+                  <div style={{ marginBottom: 36, textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.75rem', fontFamily: 'var(--hero-mono)', letterSpacing: '0.15em', color: 'rgba(240,244,255,0.4)', marginBottom: 12, textTransform: 'uppercase' }}>
+                      PORTAL ACCESS
+                    </div>
+                    <h2 style={{ fontSize: '2rem', fontWeight: 800, background: 'linear-gradient(135deg,#fff 40%,#93c5fd)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: 6 }}>
+                      Welcome Back
+                    </h2>
+                    <p style={{ color: 'rgba(240,244,255,0.4)', fontSize: '0.9rem' }}>Enter your credentials to continue</p>
                   </div>
-                  {/* Dot progress */}
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    {STEPS.map((_, i) => (
-                      <div key={i} style={{
-                        width: i === step ? 20 : 8, height: 8, borderRadius: 100,
-                        background: i <= step ? 'linear-gradient(90deg, #2563eb, #06b6d4)' : 'rgba(255,255,255,0.1)',
-                        transition: 'all 0.3s',
-                        boxShadow: i === step ? '0 0 10px rgba(37,99,235,0.6)' : 'none',
-                      }} />
-                    ))}
+
+                  {errorMsg && <div className="hero-error" style={{ marginBottom: 20 }}>{errorMsg}</div>}
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+                    <HeroInput label="Email" type="email" value={loginData.email}
+                      onChange={v => setLoginData({ ...loginData, email: v })}
+                      placeholder="you@example.com" icon={<Globe size={16} />} />
+                    <HeroInput label="Password" type={showLoginPw ? 'text' : 'password'}
+                      value={loginData.password} onChange={v => setLoginData({ ...loginData, password: v })}
+                      placeholder="••••••••" icon={<Lock size={16} />}
+                      right={<button type="button" onClick={() => setShowLoginPw(!showLoginPw)}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(240,244,255,0.4)', display: 'flex' }}>
+                        {showLoginPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>}
+                    />
+                  </div>
+
+                  <motion.button onClick={handleLogin} disabled={loading}
+                    whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                    className="hero-btn-primary"
+                    style={{ width: '100%', marginTop: 28, fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+                    {loading ? <><Loader2 size={18} className="animate-spin" /> Signing in...</> : <>Sign In <ArrowRight size={18} /></>}
+                  </motion.button>
+
+                  <button onClick={() => { setMode('register'); setStep(0); setErrorMsg(null); }}
+                    style={{ width: '100%', marginTop: 16, background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(240,244,255,0.4)', fontSize: '0.875rem', fontFamily: 'var(--hero-font)', transition: 'color 0.2s' }}
+                    onMouseEnter={e => (e.currentTarget.style.color = 'rgba(240,244,255,0.8)')}
+                    onMouseLeave={e => (e.currentTarget.style.color = 'rgba(240,244,255,0.4)')}>
+                    Don't have an account? <span style={{ color: '#60a5fa', fontWeight: 600 }}>Create one →</span>
+                  </button>
+                </div>
+              </motion.div>
+            )}
+
+            {/* ══ REGISTER WIZARD ══ */}
+            {mode === 'register' && (
+              <motion.div key={`register-${step}`}
+                custom={dir}
+                variants={slideVariants}
+                initial="enter" animate="center" exit="exit"
+                transition={transition}
+                style={{ width: '100%', maxWidth: step === 4 ? 720 : 520 }}>
+                <div className="hero-card" style={{ padding: '40px 36px', position: 'relative', overflow: 'hidden' }}>
+
+                  {/* Step label */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
+                    <div>
+                      <p className="hero-step-label" style={{ marginBottom: 6 }}>
+                        Step {step + 1} of {totalSteps}
+                      </p>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <span style={{ color: 'rgba(37,99,235,0.9)' }}>{STEPS[step].icon}</span>
+                        <h2 style={{ fontSize: '1.45rem', fontWeight: 800, color: '#f0f4ff' }}>{STEPS[step].title}</h2>
+                      </div>
+                      <p style={{ color: 'rgba(240,244,255,0.4)', fontSize: '0.85rem', marginTop: 4 }}>{STEPS[step].sub}</p>
+                    </div>
+                    {/* Dot progress */}
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      {STEPS.map((_, i) => (
+                        <div key={i} style={{
+                          width: i === step ? 20 : 8, height: 8, borderRadius: 100,
+                          background: i <= step ? 'linear-gradient(90deg, #2563eb, #06b6d4)' : 'rgba(255,255,255,0.1)',
+                          transition: 'all 0.3s',
+                          boxShadow: i === step ? '0 0 10px rgba(37,99,235,0.6)' : 'none',
+                        }} />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Error */}
+                  {errorMsg && <div className="hero-error" style={{ marginBottom: 20 }}>{errorMsg}</div>}
+
+                  {/* Step content */}
+                  <div style={{ minHeight: step === 4 ? 'auto' : 280 }}>
+                    {STEPS[step].render()}
+                  </div>
+
+                  {/* Nav buttons */}
+                  <div style={{ display: 'flex', gap: 12, marginTop: 28 }}>
+                    {step > 0 && (
+                      <motion.button type="button" onClick={() => goStep(step - 1)}
+                        whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                        className="hero-btn-ghost" style={{ flex: 1 }}>
+                        <ArrowLeft size={16} style={{ display: 'inline', marginRight: 6 }} /> Back
+                      </motion.button>
+                    )}
+                    {step < totalSteps - 1 ? (
+                      <motion.button type="button"
+                        onClick={() => { if (stepValid[step]) goStep(step + 1); }}
+                        disabled={!stepValid[step]}
+                        whileHover={{ scale: stepValid[step] ? 1.02 : 1 }}
+                        whileTap={{ scale: stepValid[step] ? 0.98 : 1 }}
+                        className="hero-btn-primary"
+                        style={{ flex: step > 0 ? 2 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                        Continue <ArrowRight size={16} />
+                      </motion.button>
+                    ) : (
+                      <motion.button type="button" onClick={handleDeploy} disabled={loading}
+                        whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                        className="hero-btn-primary"
+                        style={{ flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontSize: '1rem' }}>
+                        {loading ? <><Loader2 size={18} className="animate-spin" /> Deploying...</> : <><Rocket size={18} /> Launch Hero</>}
+                      </motion.button>
+                    )}
                   </div>
                 </div>
-
-                {/* Error */}
-                {errorMsg && <div className="hero-error" style={{ marginBottom: 20 }}>{errorMsg}</div>}
-
-                {/* Step content */}
-                <div style={{ minHeight: step === 4 ? 'auto' : 280 }}>
-                  {STEPS[step].render()}
-                </div>
-
-                {/* Nav buttons */}
-                <div style={{ display: 'flex', gap: 12, marginTop: 28 }}>
-                  {step > 0 && (
-                    <motion.button type="button" onClick={() => goStep(step - 1)}
-                      whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                      className="hero-btn-ghost" style={{ flex: 1 }}>
-                      <ArrowLeft size={16} style={{ display: 'inline', marginRight: 6 }} /> Back
-                    </motion.button>
-                  )}
-                  {step < totalSteps - 1 ? (
-                    <motion.button type="button"
-                      onClick={() => { if (stepValid[step]) goStep(step + 1); }}
-                      disabled={!stepValid[step]}
-                      whileHover={{ scale: stepValid[step] ? 1.02 : 1 }}
-                      whileTap={{ scale: stepValid[step] ? 0.98 : 1 }}
-                      className="hero-btn-primary"
-                      style={{ flex: step > 0 ? 2 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                      Continue <ArrowRight size={16} />
-                    </motion.button>
-                  ) : (
-                    <motion.button type="button" onClick={handleDeploy} disabled={loading}
-                      whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                      className="hero-btn-primary"
-                      style={{ flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontSize: '1rem' }}>
-                      {loading ? <><Loader2 size={18} className="animate-spin" /> Deploying...</> : <><Rocket size={18} /> Launch Hero</>}
-                    </motion.button>
-                  )}
-                </div>
-              </div>
-            </motion.div>
-          )}
+              </motion.div>
+            )}
 
           </AnimatePresence>
         </motion.div>

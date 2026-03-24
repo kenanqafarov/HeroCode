@@ -7,7 +7,7 @@ import {
   updateBlog,
   deleteBlog,
   likeBlog,
-  addComment
+  addCommentOrReply,
 } from '../controllers/blog.controller';
 import { protect } from '../middleware/auth.middleware';
 
@@ -23,6 +23,6 @@ router.get('/user/my-blogs', protect, getUserBlogs);
 router.put('/:id', protect, updateBlog);
 router.delete('/:id', protect, deleteBlog);
 router.post('/:id/like', protect, likeBlog);
-router.post('/:id/comment', protect, addComment);
+router.post('/:id/comment', protect, addCommentOrReply);   // həm comment, həm reply üçün
 
 export default router;

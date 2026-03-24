@@ -4,78 +4,116 @@ export const getAuthHeaders = () => {
   const token = localStorage.getItem('token');
   return {
     'Content-Type': 'application/json',
-    ...(token && { 'Authorization': `Bearer ${token}` })
+    ...(token && { 'Authorization': `Bearer ${token}` }),
   };
+};
+
+// Helper to handle fetch + JSON + error
+const apiRequest = async <T>(
+  url: string,
+  options: RequestInit = {}
+): Promise<{ success: boolean; message?: string; data?: T; pagination?: any }> => {
+  try {
+    const response = await fetch(url, options);
+
+    // Handle non-JSON responses gracefully
+    if (!response.ok) {
+      let errorMsg = 'Something went wrong';
+      try {
+        const errData = await response.json();
+        errorMsg = errData.message || errorMsg;
+      } catch {}
+      throw new Error(errorMsg);
+    }
+
+    const data = await response.json();
+    return data; // Assume backend always returns { success, data?, message?, pagination? }
+  } catch (error: any) {
+    console.error('API Error:', error);
+    throw error; // Let the caller handle with toast etc.
+  }
 };
 
 // Auth API
 export const authAPI = {
   login: (email: string, password: string) =>
-    fetch(`${API_BASE}/auth/login`, {
+    apiRequest(`${API_BASE}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-    }).then(r => r.json()),
+      body: JSON.stringify({ email, password }),
+    }),
 
   register: (data: any) =>
-    fetch(`${API_BASE}/auth/register`, {
+    apiRequest(`${API_BASE}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    }).then(r => r.json()),
+      body: JSON.stringify(data),
+    }),
 };
 
 // Blog API
 export const blogAPI = {
-  getAll: (page = 1, limit = 20) =>
-    fetch(`${API_BASE}/blogs?page=${page}&limit=${limit}`).then(r => r.json()),
+  getAll: (
+    page = 1,
+    limit = 20,
+    search = '',
+    category = '',
+    tag = ''
+  ) => {
+    let url = `${API_BASE}/blogs?page=${page}&limit=${limit}`;
+    if (search) url += `&search=${encodeURIComponent(search)}`;
+    if (category) url += `&category=${encodeURIComponent(category)}`;
+    if (tag) url += `&tag=${encodeURIComponent(tag)}`;
+
+    return apiRequest(url); // GET by default
+  },
 
   getById: (id: string) =>
-    fetch(`${API_BASE}/blogs/${id}`).then(r => r.json()),
+    apiRequest(`${API_BASE}/blogs/${id}`),
 
   create: (data: any) =>
-    fetch(`${API_BASE}/blogs`, {
+    apiRequest(`${API_BASE}/blogs`, {
       method: 'POST',
       headers: getAuthHeaders(),
-      body: JSON.stringify(data)
-    }).then(r => r.json()),
+      body: JSON.stringify(data),
+    }),
 
   update: (id: string, data: any) =>
-    fetch(`${API_BASE}/blogs/${id}`, {
+    apiRequest(`${API_BASE}/blogs/${id}`, {
       method: 'PUT',
       headers: getAuthHeaders(),
-      body: JSON.stringify(data)
-    }).then(r => r.json()),
+      body: JSON.stringify(data),
+    }),
 
   delete: (id: string) =>
-    fetch(`${API_BASE}/blogs/${id}`, {
+    apiRequest(`${API_BASE}/blogs/${id}`, {
       method: 'DELETE',
-      headers: getAuthHeaders()
-    }).then(r => r.json()),
+      headers: getAuthHeaders(),
+    }),
 
   like: (id: string) =>
-    fetch(`${API_BASE}/blogs/${id}/like`, {
-      method: 'POST',
-      headers: getAuthHeaders()
-    }).then(r => r.json()),
-
-  addComment: (id: string, text: string) =>
-    fetch(`${API_BASE}/blogs/${id}/comment`, {
+    apiRequest(`${API_BASE}/blogs/${id}/like`, {
       method: 'POST',
       headers: getAuthHeaders(),
-      body: JSON.stringify({ text })
-    }).then(r => r.json()),
+    }),
+
+  addComment: (id: string, text: string) =>
+    apiRequest(`${API_BASE}/blogs/${id}/comment`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ text }),
+    }),
 };
 
 // User API
 export const userAPI = {
   getMe: () =>
-    fetch(`${API_BASE}/users/me`, {
-      headers: getAuthHeaders()
-    }).then(r => r.json()),
+    apiRequest(`${API_BASE}/users/me`, {
+      headers: getAuthHeaders(),
+    }),
 
   getBlogs: () =>
-    fetch(`${API_BASE}/blogs/user/my-blogs`, {
-      headers: getAuthHeaders()
-    }).then(r => r.json()),
+    apiRequest(`${API_BASE}/blogs/user/my-blogs`, {
+      headers: getAuthHeaders(),
+    }),
 };
