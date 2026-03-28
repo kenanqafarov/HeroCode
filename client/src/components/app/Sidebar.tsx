@@ -7,13 +7,30 @@ const Sidebar = () => {
   const navigate = useNavigate();
   const [showLoginModal, setShowLoginModal] = useState(false);
 
-  const handleIconClick = () => {
+  const handleIconClick = (action: string) => {
     const token = localStorage.getItem("token");
     if (!token) {
       setShowLoginModal(true);
       return;
     }
-    // Add functionality here based on which icon was clicked
+    
+    // Handle navigation based on action
+    switch(action) {
+      case 'home':
+        navigate('/');
+        break;
+      case 'battle':
+        navigate('/live-match');
+        break;
+      case 'modules':
+        navigate('/lesson-modules');
+        break;
+      case 'profile':
+        navigate('/profile');
+        break;
+      default:
+        break;
+    }
   };
 
   const handlePlusClick = () => {
@@ -90,20 +107,23 @@ const Sidebar = () => {
       <div className="fixed left-0 top-1/2 -translate-y-1/2 flex flex-col items-center bg-white dark:bg-slate-900 rounded-r-3xl shadow-2xl py-8 px-4 gap-4 z-40">
         {/* Top 3 icons */}
         <button
-          onClick={handleIconClick}
+          onClick={() => handleIconClick('home')}
           className="p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors group cursor-pointer"
+          title="Home"
         >
           <Home className="w-5 h-5 text-gray-700 dark:text-slate-300" />
         </button>
         <button
-          onClick={handleIconClick}
+          onClick={() => handleIconClick('battle')}
           className="p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors group cursor-pointer"
+          title="Battle"
         >
           <Swords className="w-5 h-5 text-gray-700 dark:text-slate-300" />
         </button>
         <button
-          onClick={handleIconClick}
+          onClick={() => handleIconClick('modules')}
           className="p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors group cursor-pointer"
+          title="Modules"
         >
           <BookOpen className="w-5 h-5 text-gray-700 dark:text-slate-300" />
         </button>
@@ -113,6 +133,7 @@ const Sidebar = () => {
           <button
             onClick={handlePlusClick}
             className="p-5 rounded-full bg-black dark:bg-black hover:bg-gray-900 dark:hover:bg-gray-800 transition-all group shadow-lg cursor-pointer"
+            title="Create"
           >
             <Plus className="w-7 h-7 text-white" />
           </button>
@@ -122,18 +143,21 @@ const Sidebar = () => {
         <button
           onClick={handleIconClick}
           className="p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors group cursor-pointer"
+          title="Features"
         >
           <Sparkles className="w-5 h-5 text-gray-700 dark:text-slate-300" />
         </button>
         <button
-          onClick={handleIconClick}
+          onClick={() => handleIconClick('profile')}
           className="p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors group cursor-pointer"
+          title="Profile"
         >
           <User className="w-5 h-5 text-gray-700 dark:text-slate-300" />
         </button>
         <button
           onClick={handleIconClick}
           className="p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors group cursor-pointer"
+          title="Settings"
         >
           <Settings className="w-5 h-5 text-gray-700 dark:text-slate-300" />
         </button>

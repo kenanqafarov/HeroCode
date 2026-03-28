@@ -12,6 +12,8 @@ import AdminPanel from "./pages/Admin";
 import LiveMatch from "./pages/LiveMatch";
 import LiveGame from "./pages/LiveGame";
 import BlogDetails from "./pages/BlogDetails";
+import LessonModules from "./pages/LessonModules";
+import ModuleDetail from "./pages/ModuleDetail";
 
 const queryClient = new QueryClient();
 
@@ -52,7 +54,8 @@ const App = () => (
             <Route path="/live-match" element={<LiveMatch />} />
             <Route path="/live-match/game/:matchId" element={<LiveGame />} />
             <Route path="/blog/:id" element={<BlogDetails />} />
-
+            <Route path="/lesson-modules" element={<ProtectedRoute><LessonModules /></ProtectedRoute>} />
+            <Route path="/lesson-modules/:moduleId" element={<ProtectedRoute><ModuleDetail /></ProtectedRoute>} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>

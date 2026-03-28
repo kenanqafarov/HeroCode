@@ -248,8 +248,19 @@ const HeroAuth = () => {
       localStorage.setItem('token', token);
       localStorage.setItem('email', loginData.email.trim());
       const meRes = await fetch(`${API_BASE}/users/me`, { headers: { Authorization: `Bearer ${token}` } });
-      if (meRes.ok) { const mj = await meRes.json(); localStorage.setItem('currentUserData', JSON.stringify(mj.data || mj)); }
-      else { localStorage.setItem('currentUserData', JSON.stringify({ email: loginData.email.trim() })); }
+      let userData = { email: loginData.email.trim() };
+      if (meRes.ok) { 
+        const mj = await meRes.json(); 
+        userData = mj.data || mj;
+        localStorage.setItem('currentUserData', JSON.stringify(userData)); 
+        // Redirect to admin if user is admin
+        if (userData.isAdmin) {
+          window.location.href = '/admin';
+          return;
+        }
+      } else { 
+        localStorage.setItem('currentUserData', JSON.stringify(userData)); 
+      }
       window.location.href = '/';
     } catch (err: any) {
       setErrorMsg(err.message || 'Login failed');
@@ -293,8 +304,14 @@ const HeroAuth = () => {
       localStorage.setItem('currentUserData', JSON.stringify({
         username: form.username.trim(), firstName: form.name.trim(), lastName: form.surname.trim(),
         email: form.email.trim(), skillLevel: form.skillLevel,
+        isAdmin: rData.data?.isAdmin || false
       }));
-      window.location.href = '/';
+      // Redirect to admin if newly registered user is admin
+      if (rData.data?.isAdmin) {
+        window.location.href = '/admin';
+      } else {
+        window.location.href = '/';
+      }
     } catch (err: any) {
       setErrorMsg(err.message || 'Registration failed');
     } finally { setLoading(false); }
