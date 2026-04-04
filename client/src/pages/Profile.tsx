@@ -219,8 +219,9 @@ const ProfilePage = () => {
             localStorage.setItem('email', payload.email);
             setIsEditingProfile(false);
             setSaveNote('Profile details were saved.');
-        } catch (err: any) {
-            setError(err?.message || 'Failed to save profile details.');
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Failed to save profile details.';
+            setError(message);
         } finally {
             setProfileSaving(false);
         }
@@ -241,8 +242,9 @@ const ProfilePage = () => {
 
             setIsEditingCharacter(false);
             setSaveNote('Character settings were saved to database.');
-        } catch (err: any) {
-            setError(err?.message || 'Failed to save character settings.');
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Failed to save character settings.';
+            setError(message);
         } finally {
             setCharacterSaving(false);
         }
