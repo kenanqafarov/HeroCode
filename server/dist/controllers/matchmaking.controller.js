@@ -1,9 +1,15 @@
-import Match from '../models/Match';
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.startGameQuestions = exports.leaveMatch = exports.attack = exports.getMyMatch = exports.leaveQueue = exports.joinQueue = void 0;
+const Match_1 = __importDefault(require("../models/Match"));
 const waitingQueue = [];
-export const joinQueue = async (req, res) => {
+const joinQueue = async (req, res) => {
     try {
         const userId = req.user.id;
-        const activeMatch = await Match.findOne({
+        const activeMatch = await Match_1.default.findOne({
             $or: [{ player1Id: userId }, { player2Id: userId }],
             status: { $in: ['Waiting', 'Active'] }
         });
@@ -18,7 +24,7 @@ export const joinQueue = async (req, res) => {
             const idx = waitingQueue.indexOf(opponentId);
             if (idx !== -1)
                 waitingQueue.splice(idx, 1);
-            const match = await Match.create({
+            const match = await Match_1.default.create({
                 player1Id: opponentId,
                 player2Id: userId,
                 status: 'Active',
@@ -32,15 +38,17 @@ export const joinQueue = async (req, res) => {
         res.status(500).json({ success: false, message: err.message });
     }
 };
-export const leaveQueue = async (req, res) => {
+exports.joinQueue = joinQueue;
+const leaveQueue = async (req, res) => {
     const idx = waitingQueue.indexOf(req.user.id);
     if (idx !== -1)
         waitingQueue.splice(idx, 1);
     res.json({ success: true, message: 'Queue-dən çıxdınız' });
 };
-export const getMyMatch = async (req, res) => {
+exports.leaveQueue = leaveQueue;
+const getMyMatch = async (req, res) => {
     try {
-        const match = await Match.findOne({
+        const match = await Match_1.default.findOne({
             $or: [
                 { player1Id: req.user.id },
                 { player2Id: req.user.id }
@@ -56,11 +64,12 @@ export const getMyMatch = async (req, res) => {
         res.status(500).json({ success: false, message: err.message });
     }
 };
-export const attack = async (req, res) => {
+exports.getMyMatch = getMyMatch;
+const attack = async (req, res) => {
     try {
         const { damage = 10 } = req.body;
         const userId = req.user.id;
-        const match = await Match.findOne({
+        const match = await Match_1.default.findOne({
             $or: [{ player1Id: userId }, { player2Id: userId }],
             status: 'Active'
         });
@@ -85,9 +94,10 @@ export const attack = async (req, res) => {
         res.status(500).json({ success: false, message: err.message });
     }
 };
-export const leaveMatch = async (req, res) => {
+exports.attack = attack;
+const leaveMatch = async (req, res) => {
     try {
-        const match = await Match.findOneAndUpdate({ $or: [{ player1Id: req.user.id }, { player2Id: req.user.id }], status: 'Active' }, { status: 'Finished', endedAt: new Date() }, { new: true });
+        const match = await Match_1.default.findOneAndUpdate({ $or: [{ player1Id: req.user.id }, { player2Id: req.user.id }], status: 'Active' }, { status: 'Finished', endedAt: new Date() }, { new: true });
         if (!match) {
             return res.status(404).json({ success: false, message: 'Aktiv matç tapılmadı' });
         }
@@ -97,7 +107,8 @@ export const leaveMatch = async (req, res) => {
         res.status(500).json({ success: false, message: err.message });
     }
 };
-export const startGameQuestions = async (req, res) => {
+exports.leaveMatch = leaveMatch;
+const startGameQuestions = async (req, res) => {
     try {
         // Realda DB-dən çəkmək olar, indi sadəcə mock
         const mockQuestions = [
@@ -110,4 +121,5 @@ export const startGameQuestions = async (req, res) => {
         res.status(500).json({ success: false, message: err.message });
     }
 };
+exports.startGameQuestions = startGameQuestions;
 //# sourceMappingURL=matchmaking.controller.js.map

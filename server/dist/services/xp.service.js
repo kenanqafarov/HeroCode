@@ -1,4 +1,10 @@
-import User from '../models/User';
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.XpService = void 0;
+const User_1 = __importDefault(require("../models/User"));
 /**
  * XP artırma və səviyyə (level) yüksəltmə məntiqi
  *
@@ -6,7 +12,7 @@ import User from '../models/User';
  *   - Hər 1000 XP → +1 level
  *   - Level artanda bonus XP və ya başqa mükafat əlavə oluna bilər
  */
-export class XpService {
+class XpService {
     /**
      * İstifadəçiyə XP əlavə edir və lazım gələrsə səviyyəsini yüksəldir
      * @param userId MongoDB _id (string)
@@ -17,7 +23,7 @@ export class XpService {
         if (xpAmount <= 0) {
             throw new Error('XP mənfi və ya sıfır ola bilməz');
         }
-        const user = await User.findById(userId);
+        const user = await User_1.default.findById(userId);
         if (!user)
             return null;
         const oldLevel = user.level;
@@ -44,7 +50,7 @@ export class XpService {
     static async awardMatchWin(userId) {
         // Qələbə üçün baza 500 XP + cari level-ə görə kiçik bonus
         const baseXp = 500;
-        const user = await User.findById(userId);
+        const user = await User_1.default.findById(userId);
         if (!user)
             throw new Error('User tapılmadı');
         const bonus = Math.floor(user.level * 20); // məsələn hər level üçün +20 XP
@@ -73,4 +79,5 @@ export class XpService {
         };
     }
 }
+exports.XpService = XpService;
 //# sourceMappingURL=xp.service.js.map

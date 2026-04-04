@@ -1,8 +1,14 @@
-import Match from '../models/Match';
-import User from '../models/User';
-import jwt from 'jsonwebtoken';
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.matchmakingSocket = void 0;
+const Match_1 = __importDefault(require("../models/Match"));
+const User_1 = __importDefault(require("../models/User"));
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const waitingPlayers = [];
-export const matchmakingSocket = (io) => {
+const matchmakingSocket = (io) => {
     io.on('connection', (socket) => {
         console.log('Yeni bağlantı:', socket.id);
         // Token ilə autentifikasiya
@@ -10,7 +16,7 @@ export const matchmakingSocket = (io) => {
         let userId = null;
         if (token) {
             try {
-                const decoded = jwt.verify(token, process.env.JWT_SECRET);
+                const decoded = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET);
                 userId = decoded.id;
             }
             catch (err) {
@@ -22,6 +28,8 @@ export const matchmakingSocket = (io) => {
             socket.disconnect();
             return;
         }
+        // User-specific room for targeted realtime updates
+        socket.join(userId);
         // ----------------------
         // Queue-yə qoşul
         // ----------------------
@@ -32,7 +40,7 @@ export const matchmakingSocket = (io) => {
             }
             if (waitingPlayers.length > 0) {
                 const opponent = waitingPlayers.shift();
-                const match = new Match({
+                const match = new Match_1.default({
                     player1Id: opponent.userId,
                     player2Id: userId,
                     status: 'Active',
@@ -53,11 +61,18 @@ export const matchmakingSocket = (io) => {
                 socket.emit('queue-status', { message: 'Növbədə gözləyin...' });
             }
         });
+        socket.on('leave-queue', () => {
+            const idx = waitingPlayers.findIndex(p => p.userId === userId);
+            if (idx !== -1) {
+                waitingPlayers.splice(idx, 1);
+            }
+            socket.emit('queue-status', { message: 'Queue-dən çıxdınız' });
+        });
         // ----------------------
         // Attack hadisəsi
         // ----------------------
         socket.on('attack', async ({ matchId, damage = 10 }) => {
-            const match = await Match.findById(matchId);
+            const match = await Match_1.default.findById(matchId);
             if (!match || match.status !== 'Active')
                 return;
             if (match.player1Id.toString() === userId) {
@@ -71,16 +86,28 @@ export const matchmakingSocket = (io) => {
                 match.winnerId = match.player1Health > 0 ? match.player1Id : match.player2Id;
                 match.endedAt = new Date();
                 if (match.winnerId) {
-                    await User.findByIdAndUpdate(match.winnerId, { $inc: { xp: 500 } });
+                    await User_1.default.findByIdAndUpdate(match.winnerId, { $inc: { xp: 500 } });
                 }
             }
             await match.save();
-            io.to(match.player1Id.toString()).to(match.player2Id?.toString() || '').emit('health-update', {
+            const player1Room = match.player1Id.toString();
+            const player2Room = match.player2Id?.toString();
+            io.to(player1Room).emit('health-update', {
+                matchId: match._id,
                 player1Health: match.player1Health,
                 player2Health: match.player2Health,
                 status: match.status,
                 winnerId: match.winnerId
             });
+            if (player2Room) {
+                io.to(player2Room).emit('health-update', {
+                    matchId: match._id,
+                    player1Health: match.player1Health,
+                    player2Health: match.player2Health,
+                    status: match.status,
+                    winnerId: match.winnerId
+                });
+            }
         });
         socket.on('disconnect', () => {
             const idx = waitingPlayers.findIndex(p => p.socketId === socket.id);
@@ -90,4 +117,5 @@ export const matchmakingSocket = (io) => {
         });
     });
 };
+exports.matchmakingSocket = matchmakingSocket;
 //# sourceMappingURL=matchmaking.socket.js.map

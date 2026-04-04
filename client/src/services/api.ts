@@ -22,7 +22,7 @@ const apiRequest = async <T>(
       try {
         const errData = await response.json();
         errorMsg = errData.message || errorMsg;
-      } catch {}
+      } catch { }
       throw new Error(errorMsg);
     }
 
@@ -110,6 +110,36 @@ export const userAPI = {
   getMe: () =>
     apiRequest(`${API_BASE}/users/me`, {
       headers: getAuthHeaders(),
+    }),
+
+  updateMe: (data: {
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    dateOfBirth?: string;
+    skillLevel?: 'beginner' | 'intermediate' | 'advanced' | 'expert';
+    learnedLanguages?: Array<{ language: string; level: 'beginner' | 'intermediate' | 'advanced' }>;
+    xp?: number;
+  }) =>
+    apiRequest(`${API_BASE}/users/me`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    }),
+
+  updateCharacter: (data: {
+    gender?: 'male' | 'female';
+    emotion?: string;
+    clothing?: string;
+    hairColor?: string;
+    skin?: string;
+    clothingColor?: string;
+    username?: string;
+  }) =>
+    apiRequest(`${API_BASE}/users/character`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
     }),
 
   getBlogs: () =>
