@@ -1,3 +1,30 @@
+/**
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * HEROCODE BACKEND - EXPRESS SERVER ENTRY POINT
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * 
+ * This file serves as the main Express.js application setup and initialization.
+ * It configures:
+ * - CORS for frontend communication (supports multiple origins for production)
+ * - Express middleware (JSON parsing, routing)
+ * - Socket.IO server for real-time features (matchmaking, live battles)
+ * - All API routes for authentication, users, modules, blogs, matchmaking, admin
+ * - Database connection via MongoDB Atlas
+ * 
+ * KEY FEATURES:
+ * - Multi-origin CORS support for localhost and production Vercel deployments
+ * - JWT token verification middleware for Socket.IO connections
+ * - Organized route mounting with protection middleware where needed
+ * - Real-time game state synchronization via WebSocket
+ * 
+ * DEPENDENCIES:
+ * - Express: HTTP server framework
+ * - Socket.IO: Real-time bidirectional communication
+ * - CORS: Cross-origin resource sharing middleware
+ * - Custom routes and socket handlers defined in /routes and /sockets
+ * ═══════════════════════════════════════════════════════════════════════════════
+ */
+
 import express from 'express';
 import cors from 'cors';
 import http from 'http';
@@ -50,7 +77,8 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Routes
+// ── API ROUTES ──────────────────────────────────────────────────────────────
+// All API endpoints are prefixed with /api and organized by feature
 app.use('/api/auth', authRoutes);
 app.use('/api/users', protect, userRoutes);
 app.use('/api/matchmaking', protect, matchmakingRoutes);
@@ -59,7 +87,8 @@ app.use('/api/blogs', blogRoutes);
 app.use('/api/lesson-modules', lessonRoutes);
 app.use('/api/modules', moduleRoutes);
 
-// Socket.IO middleware (token yoxlama)
+// ── WEBSOCKET MIDDLEWARE ────────────────────────────────────────────────────
+// Verify JWT tokens for Socket.IO connections before allowing socket events
 io.use((socket, next) => {
   const token = socket.handshake.auth.token;
   if (!token) return next(new Error('Token tələb olunur'));
@@ -73,10 +102,11 @@ io.use((socket, next) => {
   }
 });
 
-// Socket bağlantıları
+// ── SOCKET.IO CONNECTIONS ──────────────────────────────────────────────────
+// Real-time game features (matchmaking, battle updates, live chat)
 matchmakingSocket(io);
 
-// Server start
+// ── SERVER STARTUP ─────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 5000;
 
 (async () => {

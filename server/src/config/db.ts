@@ -1,8 +1,30 @@
+/**
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * DATABASE CONNECTION CONFIGURATION
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * 
+ * Establishes connection to MongoDB Atlas
+ * Called once during server startup in app.ts
+ * 
+ * ENVIRONMENT VARIABLES REQUIRED:
+ * - MONGO_URI: MongoDB Atlas connection string (includes username, password, cluster)
+ * 
+ * ERROR HANDLING:
+ * - Validates MONGO_URI is set before attempting connection
+ * - Provides helpful error messages for common connection issues
+ * - Exits process on connection failure
+ * ═══════════════════════════════════════════════════════════════════════════════
+ */
+
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
+/**
+ * Connects to MongoDB Atlas database
+ * Also provides diagnostic information for troubleshooting connection issues
+ */
 export const connectDB = async () => {
   try {
     if (!process.env.MONGO_URI) {
