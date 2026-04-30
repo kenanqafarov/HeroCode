@@ -81,6 +81,43 @@ export const matchmakingSocket = (io: Server) => {
     });
 
     // ----------------------
+    // Leave match hadisəsi
+    // ----------------------
+    socket.on('leave-match', async ({ matchId }) => {
+      const match = await Match.findById(matchId);
+      if (!match || match.status !== 'Active') return;
+
+      // Match-i bitir
+      match.status = 'Finished';
+      match.endedAt = new Date();
+
+      // Çıxan oyuncu kaybetmiş sayılır
+      if (match.player1Id.toString() === userId) {
+        match.winnerId = match.player2Id;
+      } else if (match.player2Id?.toString() === userId) {
+        match.winnerId = match.player1Id;
+      }
+
+      await match.save();
+
+      // Hər iki oyunçuya bildir
+      const player1Room = match.player1Id.toString();
+      const player2Room = match.player2Id?.toString();
+
+      io.to(player1Room).emit('match-ended', {
+        matchId: match._id,
+        message: 'Rəqib oyundan çıxdı'
+      });
+
+      if (player2Room) {
+        io.to(player2Room).emit('match-ended', {
+          matchId: match._id,
+          message: 'Rəqib oyundan çıxdı'
+        });
+      }
+    });
+
+    // ----------------------
     // Attack hadisəsi
     // ----------------------
     socket.on('attack', async ({ matchId, damage = 10 }) => {
@@ -127,9 +164,48 @@ export const matchmakingSocket = (io: Server) => {
       }
     });
 
-    socket.on('disconnect', () => {
+    socket.on('disconnect', async () => {
       const idx = waitingPlayers.findIndex(p => p.socketId === socket.id);
       if (idx !== -1) waitingPlayers.splice(idx, 1);
+
+      // Əgər oyunçu aktiv match-də idisə, match-i bitir
+      if (userId) {
+        const match = await Match.findOne({
+          $or: [{ player1Id: userId }, { player2Id: userId }],
+          status: 'Active'
+        });
+
+        if (match) {
+          match.status = 'Finished';
+          match.endedAt = new Date();
+
+          // Disconnect etmiş oyuncu kaybetmiş sayılır
+          if (match.player1Id.toString() === userId) {
+            match.winnerId = match.player2Id;
+          } else if (match.player2Id?.toString() === userId) {
+            match.winnerId = match.player1Id;
+          }
+
+          await match.save();
+
+          // Rəqibə bildir
+          const player1Room = match.player1Id.toString();
+          const player2Room = match.player2Id?.toString();
+
+          io.to(player1Room).emit('match-ended', {
+            matchId: match._id,
+            message: 'Rəqib bağlantıdan kəsildi'
+          });
+
+          if (player2Room) {
+            io.to(player2Room).emit('match-ended', {
+              matchId: match._id,
+              message: 'Rəqib bağlantıdan kəsildi'
+            });
+          }
+        }
+      }
+
       console.log('Bağlantı kəsildi:', socket.id);
     });
   });

@@ -107,7 +107,11 @@ export const leaveMatch = async (req: AuthRequest, res: Response) => {
   try {
     const match = await Match.findOneAndUpdate(
       { $or: [{ player1Id: req.user!.id }, { player2Id: req.user!.id }], status: 'Active' },
-      { status: 'Finished', endedAt: new Date() },
+      {
+        status: 'Finished',
+        endedAt: new Date(),
+        winnerId: null // Bu endpoint-ə socket event emit etmiş tərəfdən soruşturulmadığından winnerId dəyişməyəcəkdir
+      },
       { new: true }
     );
 

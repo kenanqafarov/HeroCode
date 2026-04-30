@@ -57,6 +57,10 @@ const LiveMatch = () => {
     const socket = io(SOCKET_URL, {
       transports: ['websocket'],
       auth: { token },
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      reconnectionAttempts: 5,
     });
     socketRef.current = socket;
 
@@ -68,6 +72,14 @@ const LiveMatch = () => {
       if (matchId) {
         navigate(`/live-match/game/${matchId}`, { replace: true });
       }
+    });
+
+    socket.on('connect', () => {
+      console.log('Socket bağlı:', socket.id);
+    });
+
+    socket.on('connect_error', (error) => {
+      console.error('Socket bağlantı xətası:', error);
     });
 
     return () => {
@@ -185,7 +197,7 @@ const LiveMatch = () => {
   }, [searching, navigate]);
 
   // =============================================
-  //  Queue-yə qoşulma
+  //  Queue-yə qoşulma (əvvəl aktiv match-i yoxla)
   // =============================================
   const joinQueue = async () => {
     const token = localStorage.getItem('token');
@@ -195,6 +207,33 @@ const LiveMatch = () => {
     }
 
     try {
+      // Əvvəl aktiv match varsa, onu bitir
+      const matchCheckRes = await fetch(`${API_BASE}/matchmaking/my-match`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (matchCheckRes.ok) {
+        const payload = await matchCheckRes.json();
+        const match = payload?.data ?? payload;
+        const matchId = match?.id || match?._id;
+
+        if (matchId && match?.status === 'Active') {
+          // Aktiv match varsa, onu bitir
+          await fetch(`${API_BASE}/matchmaking/leave-match`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          });
+        }
+      }
+
+      // İndi queue-yə qoş
       if (!socketRef.current) {
         return false;
       }

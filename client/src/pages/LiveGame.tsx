@@ -235,6 +235,16 @@ export default function HeroCode() {
       }
     });
 
+    socket.on('match-ended', (payload: any) => {
+      const activeMatchId = match?.id || match?._id;
+      const eventMatchId = payload?.matchId ? String(payload.matchId) : null;
+      if (activeMatchId && eventMatchId && String(activeMatchId) !== eventMatchId) return;
+
+      addOutput('RƏQİB OYUNDAN ÇIXDI! Profil səhifəsinə yönləndirilirsiz...', 'error');
+      localStorage.removeItem(QUESTION_INDEX_KEY);
+      setTimeout(() => window.location.href = '/profile', 1500);
+    });
+
     return () => {
       socket.disconnect();
       socketRef.current = null;
@@ -453,6 +463,9 @@ export default function HeroCode() {
         }
       });
 
+      // Yeni sual üçün testləri sıfırla
+      setTestsPassed(false);
+
     } catch (err: any) {
       addOutput(`Attack xətası: ${err.response?.data?.message || err.message}`, 'error');
     } finally {
@@ -469,6 +482,14 @@ export default function HeroCode() {
 
     try {
       const token = localStorage.getItem('token');
+      const matchId = match?.id || match?._id;
+
+      // Socket üzərindən rəqibə xəbər ver
+      if (socketRef.current?.connected && matchId) {
+        socketRef.current.emit('leave-match', { matchId });
+      }
+
+      // Backend-ə xəbər ver
       await axios.post(
         `${API_BASE}/matchmaking/leave-match`,
         {},
