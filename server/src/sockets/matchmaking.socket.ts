@@ -51,8 +51,7 @@ export const matchmakingSocket = (io: Server) => {
         const match = new Match({
           player1Id: opponent.userId,
           player2Id: userId,
-          status: 'Active',
-          questions: ['q1', 'q2', 'q3', 'q4', 'q5'] // realda DB-dən çək
+          status: 'Active'
         });
 
         await match.save();

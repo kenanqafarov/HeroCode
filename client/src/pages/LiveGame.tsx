@@ -5,6 +5,7 @@ import { io, Socket } from 'socket.io-client';
 import Select, { SingleValue } from 'react-select';
 import Editor from '@monaco-editor/react';
 import PixelCharacter, { EmotionType, ClothingType } from '../components/PixelCharacter';
+import { useParams } from 'react-router-dom';
 
 const ReactSelect = Select as any;
 const MonacoEditor = Editor as any;
@@ -84,8 +85,10 @@ const defaultCharProps: CharProps = {
 
 // localStorage açarı
 const QUESTION_INDEX_KEY = 'heroCode_currentQuestionIndex';
+const MATCH_ID_KEY = 'heroCode_currentMatchId';
 
 export default function HeroCode() {
+  const { matchId } = useParams<{ matchId: string }>();
   const [match, setMatch] = useState<MatchData | null>(null);
   const [currentUser, setCurrentUser] = useState<UserData | null>(null);
   const [opponent, setOpponent] = useState<UserData | null>(null);
@@ -127,6 +130,15 @@ export default function HeroCode() {
   }, [language]);
 
   useEffect(() => {
+    if (matchId) {
+      const storedMatchId = localStorage.getItem(MATCH_ID_KEY);
+      if (storedMatchId !== matchId) {
+        localStorage.setItem(MATCH_ID_KEY, matchId);
+        localStorage.removeItem(QUESTION_INDEX_KEY);
+        setCurrentQuestionIndex(0);
+      }
+    }
+
     const savedIndex = localStorage.getItem(QUESTION_INDEX_KEY);
     if (savedIndex !== null) {
       const parsed = parseInt(savedIndex, 10);
@@ -162,8 +174,9 @@ export default function HeroCode() {
 
         await loadMatchAndOpponent(token, normalizedUser.id, true);
 
+        const questionQuery = matchId ? `?matchId=${encodeURIComponent(matchId)}` : '';
         const { data: qData } = await axios.get<{ success: boolean; data: Question[] }>(
-          `${API_BASE}/matchmaking/start-game-questions`,
+          `${API_BASE}/matchmaking/start-game-questions${questionQuery}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
@@ -195,15 +208,15 @@ export default function HeroCode() {
       const token = localStorage.getItem('token');
       const storedUser = localStorage.getItem('currentUserData');
       const userId = storedUser ? (JSON.parse(storedUser).id || JSON.parse(storedUser)._id) : null;
-      if (token && userId) {
-        loadMatchAndOpponent(token, userId, false);
-      }
-    }, 3500);
+        if (token && userId) {
+          loadMatchAndOpponent(token, userId, false);
+        }
+      }, 3500);
 
     return () => {
       if (pollingRef.current) clearInterval(pollingRef.current);
     };
-  }, []);
+  }, [matchId]);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -242,6 +255,7 @@ export default function HeroCode() {
 
       addOutput('RƏQİB OYUNDAN ÇIXDI! Profil səhifəsinə yönləndirilirsiz...', 'error');
       localStorage.removeItem(QUESTION_INDEX_KEY);
+      localStorage.removeItem(MATCH_ID_KEY);
       setTimeout(() => window.location.href = '/profile', 1500);
     });
 
@@ -253,8 +267,9 @@ export default function HeroCode() {
 
   const loadMatchAndOpponent = async (token: string, userId: string, showOutput: boolean = true) => {
     try {
+      const matchQuery = matchId ? `?matchId=${encodeURIComponent(matchId)}` : '';
       const { data: payload } = await axios.get<{ success: boolean; data: MatchData | null }>(
-        `${API_BASE}/matchmaking/my-match`,
+        `${API_BASE}/matchmaking/my-match${matchQuery}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -497,6 +512,7 @@ export default function HeroCode() {
       );
       addOutput('Uğurla çıxdınız!', 'success');
       localStorage.removeItem(QUESTION_INDEX_KEY);
+      localStorage.removeItem(MATCH_ID_KEY);
       setTimeout(() => window.location.href = '/profile', 1400);
     } catch (err: any) {
       addOutput(`Çıxış xətası: ${err.response?.data?.message || err.message}`, 'error');
