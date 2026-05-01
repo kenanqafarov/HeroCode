@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import Match from '../models/Match';
 import Question from '../models/Question';
 import { AuthRequest } from '../middleware/auth.middleware';
+import { getIo } from '../sockets/io';
 
 const waitingQueue: string[] = [];
 const QUESTION_COUNT = 5;
@@ -106,7 +107,7 @@ export const attack = async (req: AuthRequest, res: Response) => {
     });
 
     if (!match) {
-      return res.status(404).json({ success: false, message: 'Aktiv matç tapılmadı' });
+      return res.json({ success: true, message: 'Aktiv matç tapılmadı' });
     }
 
     if (match.player1Id.toString() === userId) {
@@ -131,18 +132,42 @@ export const attack = async (req: AuthRequest, res: Response) => {
 
 export const leaveMatch = async (req: AuthRequest, res: Response) => {
   try {
-    const match = await Match.findOneAndUpdate(
-      { $or: [{ player1Id: req.user!.id }, { player2Id: req.user!.id }], status: 'Active' },
-      {
-        status: 'Finished',
-        endedAt: new Date(),
-        winnerId: null // Bu endpoint-ə socket event emit etmiş tərəfdən soruşturulmadığından winnerId dəyişməyəcəkdir
-      },
-      { new: true }
-    );
+    const userId = req.user!.id;
+    const match = await Match.findOne({
+      $or: [{ player1Id: userId }, { player2Id: userId }],
+      status: 'Active'
+    });
 
     if (!match) {
       return res.status(404).json({ success: false, message: 'Aktiv matç tapılmadı' });
+    }
+
+    match.status = 'Finished';
+    match.endedAt = new Date();
+    if (match.player1Id.toString() === userId) {
+      match.winnerId = match.player2Id;
+    } else {
+      match.winnerId = match.player1Id;
+    }
+
+    await match.save();
+
+    const io = getIo();
+    if (io) {
+      const player1Room = match.player1Id.toString();
+      const player2Room = match.player2Id?.toString();
+
+      io.to(player1Room).emit('match-ended', {
+        matchId: match._id,
+        message: 'Rəqib oyundan çıxdı'
+      });
+
+      if (player2Room) {
+        io.to(player2Room).emit('match-ended', {
+          matchId: match._id,
+          message: 'Rəqib oyundan çıxdı'
+        });
+      }
     }
 
     res.json({ success: true, message: 'Matçdan çıxdınız' });

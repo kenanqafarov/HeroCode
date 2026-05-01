@@ -38,6 +38,7 @@ import blogRoutes from './routes/blog.routes';
 import lessonRoutes from './routes/lesson.routes';
 import moduleRoutes from './routes/module.routes';
 import { matchmakingSocket } from './sockets/matchmaking.socket';
+import { setIo } from './sockets/io';
 import { protect } from './middleware/auth.middleware';
 import jwt from 'jsonwebtoken';
 
@@ -56,6 +57,7 @@ const io = new Server(server, {
     credentials: true
   }
 });
+setIo(io);
 
 const allowedOrigins = [
   'http://localhost:5173',

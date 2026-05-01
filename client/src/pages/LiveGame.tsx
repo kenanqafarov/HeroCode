@@ -515,7 +515,16 @@ export default function HeroCode() {
       localStorage.removeItem(MATCH_ID_KEY);
       setTimeout(() => window.location.href = '/profile', 1400);
     } catch (err: any) {
-      addOutput(`Çıxış xətası: ${err.response?.data?.message || err.message}`, 'error');
+      const status = err.response?.status;
+      const message = err.response?.data?.message || err.message;
+      if (status === 404 || String(message).toLowerCase().includes('aktiv matç tapılmadı')) {
+        addOutput('Aktiv matç tapılmadı — oyundan çıxılır...', 'warning');
+        localStorage.removeItem(QUESTION_INDEX_KEY);
+        localStorage.removeItem(MATCH_ID_KEY);
+        setTimeout(() => window.location.href = '/profile', 800);
+        return;
+      }
+      addOutput(`Çıxış xətası: ${message}`, 'error');
     } finally {
       setLeaving(false);
     }
